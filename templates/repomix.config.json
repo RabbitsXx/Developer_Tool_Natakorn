@@ -1,0 +1,22 @@
+{
+  "output": {
+    "filePath": ".artifacts/repomix-output.xml",
+    "style": "xml",
+    "showLineNumbers": true
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      ".git/**",
+      ".artifacts/**",
+      "**/.env*",
+      "**/*.pem",
+      "**/*.key",
+      "**/database-dumps/**"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  }
+}

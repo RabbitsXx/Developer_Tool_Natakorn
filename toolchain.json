@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "name": "Ultimate VibeCoder Ecosystem",
+  "policy": {
+    "globalTools": ["git", "node", "rtk"],
+    "projectLocalTools": [
+      "next",
+      "typescript",
+      "tailwindcss",
+      "drizzle-kit",
+      "supabase",
+      "inngest",
+      "repomix"
+    ],
+    "neverCommit": [
+      ".env",
+      ".env.local",
+      "*.pem",
+      "*.key",
+      "database-dumps",
+      "repomix-output.*"
+    ],
+    "packageManagerRule": "Use the package manager selected by the existing lockfile."
+  },
+  "tools": [
+    { "id": "git", "tier": "required", "verify": "git --version" },
+    {
+      "id": "node",
+      "tier": "required",
+      "minimum": "22",
+      "verify": "node --version"
+    },
+    { "id": "rtk", "tier": "recommended", "verify": "rtk gain" },
+    {
+      "id": "repomix",
+      "tier": "on-demand",
+      "verify": "npx repomix@latest --version"
+    },
+    {
+      "id": "bruno",
+      "tier": "recommended-for-api-work",
+      "verify": "bru --version"
+    },
+    {
+      "id": "container-runtime",
+      "tier": "required-for-local-supabase",
+      "alternatives": {
+        "windows": ["Docker Desktop", "Rancher Desktop", "Podman"],
+        "macos": ["OrbStack", "Docker Desktop", "Rancher Desktop", "Podman"],
+        "linux": ["Docker Engine", "Podman"]
+      }
+    },
+    {
+      "id": "crawl4ai",
+      "tier": "on-demand",
+      "pythonMinimum": "3.10",
+      "installScope": "isolated Python environment"
+    },
+    {
+      "id": "jina-reader",
+      "tier": "on-demand",
+      "installScope": "HTTP API; no local installation required"
+    }
+  ],
+  "cloud": [
+    {
+      "id": "supabase",
+      "when": "Postgres, Auth, Storage, or Realtime is required"
+    },
+    {
+      "id": "vercel",
+      "when": "Deploying Next.js or using Vercel Preview/Functions"
+    },
+    {
+      "id": "inngest",
+      "when": "Durable background workflows, retries, waits, or concurrency controls are required"
+    }
+  ]
+}

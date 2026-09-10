@@ -1,0 +1,16 @@
+.git/**
+.artifacts/**
+.env*
+!.env.example
+!.env.template
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/node_modules/**
+**/.next/**
+**/dist/**
+**/build/**
+**/coverage/**
+**/*.log
+**/database-dumps/**

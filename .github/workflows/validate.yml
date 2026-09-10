@@ -1,0 +1,58 @@
+name: Validate kit
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Validate JSON
+        shell: bash
+        run: |
+          node -e "for (const file of ['toolchain.json', 'repomix.config.json', 'templates/repomix.config.json']) JSON.parse(require('fs').readFileSync(file, 'utf8'))"
+
+      - name: Validate Bash scripts
+        shell: bash
+        run: bash -n scripts/doctor.sh scripts/bootstrap-project.sh
+
+      - name: Run Bash doctor
+        shell: bash
+        run: bash scripts/doctor.sh
+
+      - name: Test Bash bootstrap
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/kit-bootstrap"
+          bash scripts/bootstrap-project.sh "$RUNNER_TEMP/kit-bootstrap"
+          bash scripts/bootstrap-project.sh "$RUNNER_TEMP/kit-bootstrap"
+          test -f "$RUNNER_TEMP/kit-bootstrap/AGENTS.md"
+          test -f "$RUNNER_TEMP/kit-bootstrap/PROJECT_CONTEXT.md"
+          test -f "$RUNNER_TEMP/kit-bootstrap/docs/run.md"
+
+      - name: Validate PowerShell scripts
+        shell: pwsh
+        run: |
+          $hasErrors = $false
+          Get-ChildItem -LiteralPath ./scripts -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $hasErrors = $true
+              $errors | Write-Error
+            }
+          }
+          if ($hasErrors) { exit 1 }

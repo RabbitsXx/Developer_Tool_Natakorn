@@ -1,0 +1,45 @@
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true)][string]$TargetPath
+)
+
+$ErrorActionPreference = 'Stop'
+$kitRoot = Split-Path -Parent $PSScriptRoot
+
+if (-not (Test-Path -LiteralPath $TargetPath -PathType Container)) {
+    throw "Target directory does not exist: $TargetPath"
+}
+
+$target = (Resolve-Path -LiteralPath $TargetPath).Path
+$sourceRoot = Join-Path $kitRoot 'templates'
+
+$copies = @(
+    @{ Source = 'AGENTS.md'; Destination = 'AGENTS.md' },
+    @{ Source = 'PROJECT_CONTEXT.md'; Destination = 'PROJECT_CONTEXT.md' },
+    @{ Source = 'run.md'; Destination = 'docs\run.md' },
+    @{ Source = 'env.example'; Destination = '.env.example' },
+    @{ Source = 'repomix.config.json'; Destination = 'repomix.config.json' },
+    @{ Source = 'repomixignore'; Destination = '.repomixignore' }
+)
+
+Write-Output "Bootstrapping AI project files into: $target"
+
+foreach ($copy in $copies) {
+    $source = Join-Path $sourceRoot $copy.Source
+    $destination = Join-Path $target $copy.Destination
+
+    if (Test-Path -LiteralPath $destination) {
+        Write-Output ("[SKIP] {0} already exists; merge it manually." -f $copy.Destination)
+        continue
+    }
+
+    $parent = Split-Path -Parent $destination
+    if (-not (Test-Path -LiteralPath $parent)) {
+        New-Item -ItemType Directory -Path $parent | Out-Null
+    }
+
+    Copy-Item -LiteralPath $source -Destination $destination
+    Write-Output ("[ADD]  {0}" -f $copy.Destination)
+}
+
+Write-Output 'Done. Edit PROJECT_CONTEXT.md, command placeholders, and .env.example before asking an AI agent to build.'
