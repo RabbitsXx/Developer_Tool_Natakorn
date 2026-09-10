@@ -1,5 +1,7 @@
-.git/**
+**/.git/**
 .artifacts/**
+.archive/**
+.freebuff/**
 .env*
 !.env.example
 !.env.template

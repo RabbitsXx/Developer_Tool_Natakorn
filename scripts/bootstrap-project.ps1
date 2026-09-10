@@ -14,6 +14,8 @@ $target = (Resolve-Path -LiteralPath $TargetPath).Path
 $sourceRoot = Join-Path $kitRoot 'templates'
 
 $copies = @(
+    @{ Source = '.gitignore'; Destination = '.gitignore' },
+    @{ Source = '.editorconfig'; Destination = '.editorconfig' },
     @{ Source = 'AGENTS.md'; Destination = 'AGENTS.md' },
     @{ Source = 'PROJECT_CONTEXT.md'; Destination = 'PROJECT_CONTEXT.md' },
     @{ Source = 'run.md'; Destination = 'docs\run.md' },

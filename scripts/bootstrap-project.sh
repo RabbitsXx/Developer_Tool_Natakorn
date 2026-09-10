@@ -34,6 +34,8 @@ copy_if_missing() {
 }
 
 copy_if_missing AGENTS.md AGENTS.md
+copy_if_missing .gitignore .gitignore
+copy_if_missing .editorconfig .editorconfig
 copy_if_missing PROJECT_CONTEXT.md PROJECT_CONTEXT.md
 copy_if_missing run.md docs/run.md
 copy_if_missing env.example .env.example

@@ -8,8 +8,10 @@
     "useGitignore": true,
     "useDefaultPatterns": true,
     "customPatterns": [
-      ".git/**",
+      "**/.git/**",
       ".artifacts/**",
+      ".archive/**",
+      ".freebuff/**",
       "**/.env*",
       "**/*.pem",
       "**/*.key",

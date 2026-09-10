@@ -20,17 +20,11 @@ repomix-output.*
 .venv/
 __pycache__/
 .pytest_cache/
+
+# Workspace, cloud and tooling state
 .archive/
 .freebuff/
-
-# Local cloud and tooling state
 .vercel/
 .supabase/
 supabase/.temp/
 supabase/.branches/
-
-# OS and editor files
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/settings.json
