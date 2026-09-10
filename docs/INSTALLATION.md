@@ -19,6 +19,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1
 bash scripts/doctor.sh
 ```
 
+## Installation gates
+
+Use the following gates instead of installing every tool globally:
+
+1. **Baseline** — Git, Node.js 22+, one package manager, and RTK. `doctor.ps1 -Strict` (or `doctor.sh --strict`) must report zero required/recommended issues.
+2. **Project-local tools** — install Repomix, Bruno, Supabase, Drizzle, Inngest, or Crawl4AI only when the project context selects them. Keep dependencies and lockfiles in that project.
+3. **Cloud services** — Supabase, Vercel, Inngest, and Jina Reader require an authenticated account, project configuration, and secrets outside Git. A CLI being installed is not proof that the cloud integration works.
+
+The setup is complete for a project only after its selected tools pass their verify commands and the project’s own lint, typecheck, test, build, and route checks pass.
+
 ## RTK
 
 First verify that the installed `rtk` is Rust Token Killer:

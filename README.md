@@ -26,6 +26,26 @@ bash scripts/bootstrap-project.sh /path/to/project
 
 Bootstrap จะไม่ทับไฟล์ที่มีอยู่ หากเจอไฟล์ชื่อเดียวกันจะข้ามและแจ้งให้ merge เอง
 
+## นิยามการติดตั้งครบ 100%
+
+Kit นี้แบ่งเครื่องมือเป็น 3 ระดับ จึงไม่ควรตีความว่า `npm install` ครั้งเดียวจะเปิดใช้ทุกบริการ cloud ได้ทันที
+
+| ระดับ | เครื่องมือ | เกณฑ์ผ่าน |
+|---|---|---|
+| Baseline | Git, Node.js 22+, package manager, RTK | รัน `scripts/doctor.ps1` หรือ `scripts/doctor.sh` ผ่าน โดยไม่มี required/recommended issue |
+| Local ตามงาน | Repomix, Bruno, Docker-compatible runtime, Crawl4AI | ติดตั้งและรัน verify ของเครื่องมือนั้นเมื่อโปรเจกต์เลือกใช้ |
+| Cloud ตามงาน | Supabase, Vercel, Inngest, Jina Reader | CLI/API ใช้ได้หลัง login, ตั้ง project และเก็บ credential ใน environment/credential store |
+
+สถานะ `100%` ของ Kit หมายถึง baseline ผ่านและเครื่องมือระดับ local/cloud ที่ระบุใน project context ถูก verify แล้ว ไม่ได้หมายถึงต้องติดตั้งทุกตัวในทุกโปรเจกต์
+
+หลังติดตั้งให้รัน:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
+```
+
+จากนั้นตรวจเฉพาะ tool ที่โปรเจกต์ใช้งานจริงตาม `toolchain.json` และเอกสารใน `docs/` ก่อน commit หรือ deploy
+
 ## Ecosystem ที่แนะนำ
 
 | Layer | Default | ใช้เมื่อ |
