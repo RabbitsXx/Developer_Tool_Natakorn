@@ -29,6 +29,30 @@ At the time this kit was created:
 
 Use `scripts/doctor.ps1` to refresh this result on any machine.
 
+## GitHub Actions status on this private repository
+
+The repository accepts pushes and recognizes both workflow files, but GitHub-hosted jobs currently finish with `startup_failure` before creating any job. A manual smoke workflow containing only `echo` fails the same way.
+
+Evidence gathered:
+
+- Repository Actions are enabled and `allowed_actions` is `all`.
+- GitHub recognizes `Validate kit` and accepts `workflow_dispatch`.
+- Action tags referenced by the workflow exist.
+- GitHub Status reports Actions operational at the time of the test.
+- The full validation workflow passes its equivalent checks locally.
+
+This isolates the remaining issue to account-level runner eligibility, billing/usage restriction, or another GitHub account control rather than repository code.
+
+Resolution procedure:
+
+1. Open GitHub account **Settings → Billing and licensing → Actions** and resolve any payment, spending-limit, or usage restriction shown there.
+2. Keep repository **Settings → Actions → General** enabled; it is already configured to allow all actions.
+3. Run the minimal diagnostic again: `gh workflow run runner-smoke.yml --repo RabbitsXx/Developer_Tool_Natakorn --ref main`.
+4. Confirm it passes with `gh run list --repo RabbitsXx/Developer_Tool_Natakorn --limit 3`.
+5. Then run the full suite: `gh workflow run validate.yml --repo RabbitsXx/Developer_Tool_Natakorn --ref main`.
+
+The `runner-smoke.yml` workflow is manual-only and can be removed after the account-level issue is resolved.
+
 ## Primary references
 
 - [RTK installation](https://www.rtk-ai.app/docs/getting-started/installation/)
