@@ -1,16 +1,42 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 4,
   "name": "Ultimate VibeCoder Ecosystem",
+  "bootstrap": {
+    "startPrompt": "START_PROMPT.md",
+    "stateFile": ".ai-kit/project.json",
+    "detector": "scripts/setup-project.mjs",
+    "driftAcceptanceFlag": "--accept-drift",
+    "modes": ["NEW_PROJECT", "EXISTING_PROJECT", "RESUME_CONFIGURED_PROJECT"],
+    "rule": "Detect first, preserve existing architecture, persist only non-secret project metadata, and never reinstall a valid configured project without a reason."
+  },
+  "selfCheck": {
+    "validate": "node scripts/validate-kit.mjs",
+    "verifyBootstrap": "node scripts/verify-bootstrap-protocol.mjs",
+    "rule": "Run both after changing kit files, templates, manifest contracts, or bootstrap scripts; both must report ok: true."
+  },
+  "skills": {
+    "uiUx": {
+      "version": 1,
+      "sourcePath": "skills/ui-ux",
+      "bootstrapPath": ".ai-kit/skills/ui-ux",
+      "activation": "Load only for user-facing UI/UX work; choose the smallest applicable subset from README.md."
+    }
+  },
+  "principles": [
+    "complex backend, simple workflow",
+    "detect before selecting",
+    "search before reading broadly",
+    "verify before claiming done",
+    "optional tools stay optional"
+  ],
   "policy": {
     "globalTools": ["git", "node", "rtk"],
     "projectLocalTools": [
-      "next",
+      "framework",
       "typescript",
-      "tailwindcss",
-      "drizzle-kit",
-      "supabase",
-      "inngest",
-      "repomix"
+      "ui-tooling",
+      "test-runner",
+      "database-client-or-orm"
     ],
     "neverCommit": [
       ".env",
@@ -18,62 +44,62 @@
       "*.pem",
       "*.key",
       "database-dumps",
-      "repomix-output.*"
+      "repomix-output.*",
+      "playwright-report",
+      "test-results"
     ],
-    "packageManagerRule": "Use the package manager selected by the existing lockfile."
+    "packageManagerRule": "Use the package manager selected by the existing lockfile.",
+    "stackRule": "Detect and preserve the existing architecture. Do not force Supabase, Neon, Drizzle, Prisma, Vercel, or any other provider merely because it appears in this kit."
+  },
+  "contextBudget": {
+    "smallTaskMaxFiles": 5,
+    "mediumTaskMaxFiles": 15,
+    "rules": [
+      "search first",
+      "read target files only",
+      "expand context only when a dependency requires it",
+      "do not reread unchanged files without a reason",
+      "use Repomix only for architecture-wide or genuinely broad tasks"
+    ]
   },
   "tools": [
     { "id": "git", "tier": "required", "verify": "git --version" },
-    {
-      "id": "node",
-      "tier": "required",
-      "minimum": "22",
-      "verify": "node --version"
-    },
+    { "id": "node", "tier": "required", "minimum": "22", "verify": "node --version" },
     { "id": "rtk", "tier": "recommended", "verify": "rtk gain" },
-    {
-      "id": "repomix",
-      "tier": "on-demand",
-      "verify": "npx repomix@latest --version"
-    },
-    {
-      "id": "bruno",
-      "tier": "recommended-for-api-work",
-      "verify": "bru --version"
-    },
+    { "id": "playwright", "tier": "recommended-for-user-facing-web", "installScope": "project-local dev dependency", "verify": "npx playwright --version" },
+    { "id": "axe-playwright", "tier": "recommended-with-playwright-for-user-facing-web", "package": "@axe-core/playwright", "installScope": "project-local dev dependency", "verify": "dependency + accessibility test" },
+    { "id": "knip", "tier": "recommended-for-js-ts-code-health", "installScope": "project-local dev dependency", "verify": "npx knip" },
+    { "id": "lefthook", "tier": "optional-local-quality-guard", "installScope": "project-local or workstation tool", "verify": "lefthook version" },
+    { "id": "repomix", "tier": "on-demand", "verify": "npx repomix@latest --version" },
+    { "id": "bruno", "tier": "recommended-for-api-work", "verify": "bru --version" },
     {
       "id": "container-runtime",
-      "tier": "required-for-local-supabase",
+      "tier": "on-demand",
       "alternatives": {
         "windows": ["Docker Desktop", "Rancher Desktop", "Podman"],
         "macos": ["OrbStack", "Docker Desktop", "Rancher Desktop", "Podman"],
         "linux": ["Docker Engine", "Podman"]
       }
     },
-    {
-      "id": "crawl4ai",
-      "tier": "on-demand",
-      "pythonMinimum": "3.10",
-      "installScope": "isolated Python environment"
-    },
-    {
-      "id": "jina-reader",
-      "tier": "on-demand",
-      "installScope": "HTTP API; no local installation required"
-    }
+    { "id": "crawl4ai", "tier": "on-demand", "pythonMinimum": "3.10", "installScope": "isolated Python environment" },
+    { "id": "jina-reader", "tier": "on-demand", "installScope": "HTTP API; no local installation required" },
+    { "id": "sentry-or-opentelemetry", "tier": "recommended-for-production", "installScope": "project-selected observability stack" }
+  ],
+  "databaseOptions": [
+    { "id": "neon", "when": "Managed PostgreSQL is needed without Supabase platform features" },
+    { "id": "supabase", "when": "Postgres plus Auth, Storage, Realtime, or Supabase platform features are useful" },
+    { "id": "postgresql", "when": "Self-hosted or another managed PostgreSQL provider is selected" }
+  ],
+  "databaseAccessOptions": [
+    { "id": "drizzle", "when": "Type-safe SQL-oriented ORM/query builder is useful" },
+    { "id": "prisma", "when": "The project already uses Prisma or its data model fits the project" },
+    { "id": "pg", "when": "Direct PostgreSQL access is simpler or existing architecture already uses it" },
+    { "id": "none", "when": "Provider SDK or another existing access layer is already authoritative" }
   ],
   "cloud": [
-    {
-      "id": "supabase",
-      "when": "Postgres, Auth, Storage, or Realtime is required"
-    },
-    {
-      "id": "vercel",
-      "when": "Deploying Next.js or using Vercel Preview/Functions"
-    },
-    {
-      "id": "inngest",
-      "when": "Durable background workflows, retries, waits, or concurrency controls are required"
-    }
+    { "id": "vercel", "when": "Deploying Next.js or using Vercel Preview/Functions" },
+    { "id": "inngest", "when": "Durable background workflows, retries, waits, or concurrency controls are required" },
+    { "id": "github-actions", "when": "A shared or production project benefits from remote verification on push/PR" },
+    { "id": "sentry-or-opentelemetry", "when": "Production errors, traces, and runtime health need visibility" }
   ]
 }

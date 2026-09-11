@@ -16,24 +16,30 @@ Status labels: **Fixed** means this repository now documents or enforces the saf
 | Global installation was used as the default | Global version drift makes builds hard to reproduce | **Fixed:** app dependencies stay project-local and pinned by lockfile |
 | “Production-ready” was implied by tool selection | Production readiness requires project-specific security, tests, monitoring, backups, accessibility, and operational review | **Fixed:** definition of done requires evidence; the stack alone is not certification |
 | Commit after every agent action | Produces noisy or broken history | **Fixed:** commit coherent, verified units; checkpoint before risky work when useful |
+| Supabase + Drizzle behaved like a universal default | Encourages unnecessary rewrites and makes the kit less portable to Neon/direct PostgreSQL or existing stacks | **Fixed:** database provider and access layer are independent project decisions; existing architecture wins |
+| UI verification depended on build/manual checks only | Compilation cannot prove forms, sessions, navigation, or browser behavior | **Fixed:** Playwright is a recommended project-local capability for critical user-facing journeys |
+| Agent retrieval had no explicit context budget | Agents can waste tokens by reading broad directories or rereading unchanged files | **Fixed:** search-first workflow plus 5-file/15-file initial context budgets and Repomix escalation rule |
+| Production monitoring was not represented as a capability | Local PASS can hide runtime failures after deployment | **Fixed:** Sentry/OpenTelemetry/project-standard observability is documented as optional production capability |
+| New AI sessions had no universal bootstrap entrypoint or persistent setup state | A new model could reinstall tools, force a preferred stack, or not know how to handle an existing project | **Fixed:** `START_PROMPT.md` + `NEW/EXISTING/RESUME` detector + commit-safe `.ai-kit/project.json` architecture fingerprint |
 
 ## Current Windows workstation result
 
-At the time this kit was created:
+Latest doctor verification for this checkout:
 
-- Available: Git, Node.js, npm, pnpm, Python, RTK.
-- Missing or not on PATH: Docker-compatible runtime, Bruno CLI/Desktop command, Yarn.
-- Yarn is not required because pnpm/npm are already available.
-- A container runtime is required only for local Supabase or other containerized services.
+- Available: Git, Node.js, npm, pnpm, Python, RTK binary, Bruno CLI, GitHub CLI.
+- RTK is currently found through the user-local fallback path but is not invokable as plain `rtk` from the project shell; add its directory to PATH for normal AI/terminal use.
+- Missing optional tools: Docker-compatible runtime, Yarn, Bun.
+- Yarn/Bun are not required because npm/pnpm are already available.
+- A container runtime is required only when the selected project needs local containerized services.
 - Python 3.14 is installed; verify Crawl4AI dependency compatibility before creating its environment.
 
 Use `scripts/doctor.ps1` to refresh this result on any machine.
 
 ## GitHub Actions decision
 
-GitHub Actions was tested during setup but intentionally removed from this private kit to keep the repository simple and avoid account-level runner/billing dependencies. Validation is performed locally through `scripts/doctor.ps1`, `scripts/doctor.sh`, the bootstrap scripts, JSON parsing, and the documented project checks.
+GitHub Actions is intentionally **not enabled by default** in this private kit. Local validation remains the baseline through `scripts/doctor.ps1`, `scripts/doctor.sh`, bootstrap verification, JSON parsing, and project checks.
 
-If this kit later becomes a shared team standard, GitHub Actions can be reintroduced after confirming the account's Actions policy and billing settings.
+An optional starter workflow now exists at `templates/optional/github-actions-ci.yml`. Copy it into a target project's `.github/workflows/` only when remote verification is useful and after confirming that project's package manager, Actions policy, runner/billing settings, and required services. The template performs verification only; it does not deploy.
 
 ## Primary references
 

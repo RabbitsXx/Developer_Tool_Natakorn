@@ -2,6 +2,33 @@
 
 Install workstation tools globally only when they are shared across projects. Keep application dependencies project-local and committed through a lockfile.
 
+## Project bootstrap and first AI session
+
+After cloning the kit and before asking an AI agent to change a target project, run the bootstrap script for that target. Bootstrap adds missing instruction files without overwriting existing ones, then writes a non-secret `.ai-kit/project.json` state file.
+
+Windows:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap-project.ps1 -TargetPath C:\path\to\project
+```
+
+macOS/Linux:
+
+```bash
+bash scripts/bootstrap-project.sh /path/to/project
+```
+
+Then open the target project's `START_PROMPT.md` and paste it into the AI coding agent. The agent must distinguish `NEW_PROJECT`, `EXISTING_PROJECT`, and `RESUME_CONFIGURED_PROJECT` before changing setup.
+
+You can refresh or inspect project state directly:
+
+```text
+node scripts/setup-project.mjs --target /path/to/project
+node scripts/setup-project.mjs --target /path/to/project --dry-run
+```
+
+See `docs/BOOTSTRAP_PROTOCOL.md` for state and drift rules.
+
 ## Required baseline
 
 - Git
@@ -24,10 +51,10 @@ bash scripts/doctor.sh
 Use the following gates instead of installing every tool globally:
 
 1. **Baseline** — Git, Node.js 22+, one package manager, and RTK. `doctor.ps1 -Strict` (or `doctor.sh --strict`) must report zero required/recommended issues.
-2. **Project-local tools** — install Repomix, Bruno, Supabase, Drizzle, Inngest, or Crawl4AI only when the project context selects them. Keep dependencies and lockfiles in that project.
-3. **Cloud services** — Supabase, Vercel, Inngest, and Jina Reader require an authenticated account, project configuration, and secrets outside Git. A CLI being installed is not proof that the cloud integration works.
+2. **Project-local tools** — install Playwright, Repomix, Bruno, database SDK/ORM, Inngest, or Crawl4AI only when the project context selects them. Keep dependencies and lockfiles in that project.
+3. **Cloud services** — Neon, Supabase, Vercel, Inngest, Sentry/observability providers, and Jina Reader require the appropriate account/project configuration and secrets outside Git. A CLI being installed is not proof that the cloud integration works.
 
-The setup is complete for a project only after its selected tools pass their verify commands and the project’s own lint, typecheck, test, build, and route checks pass.
+The setup is complete for a project only after its selected tools pass their verify commands and the project’s own lint, typecheck, test, build, and route checks pass. A previously configured project should resume from `.ai-kit/project.json` rather than reinstalling tools simply because a new AI model/session entered the repository.
 
 ## RTK
 
@@ -99,15 +126,46 @@ docker compose version
 
 ## Project-local web stack
 
-Create Next.js first, then add only capabilities required by the product:
+For a new project with no existing architecture, Next.js + TypeScript is a strong default:
 
 ```text
 npx create-next-app@latest my-app --ts --eslint --tailwind --src-dir --app --import-alias "@/*"
 ```
 
-Inside the project, install and configure Supabase, Drizzle, shadcn/ui, and Inngest from their current official documentation. Commit the package-manager lockfile and database migrations.
+Then select only capabilities required by the product. Database and data-access choices are independent decisions: Neon, Supabase, another PostgreSQL provider, Drizzle, Prisma, direct `pg`, or a provider SDK can all be correct depending on the project.
 
-Do not install Vercel, Supabase, Drizzle, Inngest, or Crawl4AI globally merely because they appear in the reference stack.
+Do not replace an existing database/provider/ORM merely to conform to this kit. Commit the package-manager lockfile and deployable database history when the architecture uses migrations.
+
+Do not install Vercel, Supabase, Drizzle, Prisma, Inngest, Playwright, observability SDKs, or Crawl4AI globally merely because they appear in the ecosystem.
+
+## UI/UX Skill Pack
+
+Bootstrap copies the instruction-only UI/UX skill pack to `.ai-kit/skills/ui-ux`. No package is installed. AI agents should read the pack only for user-facing UI/UX tasks and then load the smallest applicable subset from its README.
+
+## Playwright
+
+For user-facing projects that need repeatable browser verification, install Playwright project-locally:
+
+```text
+npm install -D @playwright/test
+npx playwright install
+```
+
+An optional starting config is available at `templates/optional/playwright.config.ts`. Copy and adapt it only after checking the project's package manager, dev command, port, authentication needs, and CI environment.
+
+When accessibility automation is useful, add `@axe-core/playwright` project-locally and adapt `templates/optional/accessibility.spec.ts`.
+
+For JavaScript/TypeScript cleanup after substantial AI-driven changes, add Knip only when needed and start from `templates/optional/knip.jsonc`. Review findings before deleting anything.
+
+Lefthook is optional for fast local Git quality hooks; adapt `templates/optional/lefthook.yml.example` only after stable lint/test commands exist. Hooks supplement final verification and CI rather than replacing them.
+
+Prefer a small set of critical journeys over a large fragile E2E suite.
+
+## Optional CI and observability
+
+`templates/optional/github-actions-ci.yml` is a lightweight starting point for remote lint/typecheck/test/build verification. It is intentionally not bootstrapped into every project.
+
+Production observability should use Sentry, OpenTelemetry, or the project's existing standard when runtime visibility is needed. Keep telemetry free of secrets and unnecessary personal data. See `docs/QUALITY_AND_PRODUCTION.md`.
 
 ## Crawl4AI and Jina Reader
 

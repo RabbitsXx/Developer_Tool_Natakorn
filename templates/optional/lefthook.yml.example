@@ -1,0 +1,14 @@
+# Starter only. Before enabling, replace `npm` with the package manager selected by the lockfile
+# and remove commands for scripts the project does not have.
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      run: npm run lint
+    typecheck:
+      run: npm run typecheck
+
+pre-push:
+  commands:
+    test:
+      run: npm test

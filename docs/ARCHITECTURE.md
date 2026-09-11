@@ -3,38 +3,76 @@
 ## Reference flow
 
 ```text
-Product intent
+Project entry
+    ↓
+START_PROMPT.md → .ai-kit/project.json
+    ↓
+NEW / EXISTING / RESUME classification
+    ↓
+Product intent + current repository evidence
     ↓
 AI architect/reviewer ── AGENTS.md + project context
     ↓
+Targeted discovery ───── search first + context budget
+    ↓
 Execution agent ──────── small verified changes
     ├── shell output ─── RTK when supported
-    ├── repo context ─── Repomix only when needed
+    ├── repo context ─── Repomix only when genuinely broad
     └── external docs ── Jina Reader or Crawl4AI
     ↓
-Next.js application
-    ├── UI ───────────── Tailwind + shadcn/ui
-    ├── data ─────────── Supabase Postgres + Drizzle
-    ├── scheduled ────── Vercel Cron (simple)
-    └── durable jobs ─── Inngest (complex)
+Web application
+    ├── UI ───────────── project-selected framework/components
+    ├── data ─────────── selected DB/provider + selected access layer
+    ├── scheduled ────── simple scheduler when needed
+    └── durable jobs ─── workflow engine only when needed
     ↓
-Tests + Preview + production build
+Focused tests → lint/typecheck → build → browser/E2E
     ↓
-GitHub → Vercel / selected deployment target
+Optional CI + production observability
+    ↓
+Selected deployment target
 ```
+
+## Bootstrap ownership
+
+The bootstrap layer is intentionally smaller than the application architecture. It detects and records what already exists; it does not own the application's framework, database, deployment, or optional tools.
+
+`.ai-kit/project.json` is a commit-safe orientation cache containing non-secret architecture metadata and a stable fingerprint. `START_PROMPT.md` teaches a newly connected AI model how to interpret that state. If repository evidence changes, the detector reports drift instead of silently rewriting architecture decisions.
+
+See `BOOTSTRAP_PROTOCOL.md` for mode rules.
 
 ## Database ownership
 
-The original “one `drizzle/schema.ts` file is always the single source of truth” rule is too narrow for Supabase.
+The kit does not choose a database provider or ORM before the project requirements are known.
+
+Examples of valid combinations include:
+
+- Neon/PostgreSQL + direct `pg`
+- Neon/PostgreSQL + Drizzle
+- Supabase + provider SDK + SQL migrations
+- PostgreSQL + Prisma
+- an existing project-specific data layer that should be preserved
 
 Use this model:
 
-- `src/db/schema/`: Drizzle definitions for application-owned tables and TypeScript queries.
-- `supabase/migrations/`: ordered, deployable database history.
-- SQL migrations: RLS, policies, grants, triggers, functions, extensions, and storage rules.
-- Generated migrations: always reviewed before local or remote application.
+- application schema/types belong in the selected data-access layer
+- deployable database history belongs in migrations when the architecture uses them
+- provider-specific behavior such as RLS, policies, grants, triggers, functions, extensions, and storage rules must remain represented in the provider/database layer
+- generated migrations are reviewed before local or remote application
 
-As a project grows, split Drizzle schema by domain and export from an index; forcing every table into one file increases merge conflicts and context noise.
+Do not replace an existing architecture just to match a preferred reference stack.
+
+## Browser verification
+
+Use Playwright for critical user journeys when repeatable browser verification is valuable. Keep the suite intentionally small: authentication, one or two core workflows, destructive-action guards, and other high-value flows.
+
+A successful framework build proves compilation, not that clicks, forms, sessions, navigation, or browser-side behavior work correctly.
+
+## CI and observability
+
+CI and production observability are capability tiers, not mandatory dependencies. A solo prototype may rely on local verification; a shared or production project can opt into a lightweight CI gate and Sentry/OpenTelemetry or an existing operational standard.
+
+Do not add deployment, observability, or CI services merely to make the toolchain look complete.
 
 ## Scheduled work
 

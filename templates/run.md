@@ -16,5 +16,10 @@
 ## Verify
 
 - Health route: `<!-- URL or command -->`
+- Lint/typecheck/test/build: `<!-- commands -->`
+- Browser E2E: `<!-- Playwright command / manual browser procedure / none -->`
 - Primary user flow: `<!-- interaction to test -->`
 - Expected result: `<!-- observable behavior -->`
+- Browser console/network expectation: `<!-- e.g. no unexpected errors -->`
+
+For user-facing changes, a successful build is not sufficient evidence by itself. Verify the real route; use Playwright when the project has it configured.

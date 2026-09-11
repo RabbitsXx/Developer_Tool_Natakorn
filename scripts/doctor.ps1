@@ -81,6 +81,7 @@ foreach ($packageManager in @('npm', 'pnpm', 'yarn', 'bun')) {
     Write-ToolResult -Name $packageManager -Tier 'optional' -Path $path -Version $(if ($path) { Get-FirstLine -Executable $path })
 }
 
+$rtkOnPath = Get-Command 'rtk' -ErrorAction SilentlyContinue
 $rtkFallback = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'rtk\rtk.exe' } else { $null }
 $rtk = Resolve-Tool -Name 'rtk' -FallbackPaths @($rtkFallback)
 Write-ToolResult -Name 'rtk' -Tier 'recommended' -Path $rtk -Version $(if ($rtk) { Get-FirstLine -Executable $rtk })
@@ -88,6 +89,10 @@ if ($rtk) {
     $gainOutput = & $rtk 'gain' 2>$null | Select-Object -First 1
     if (-not $gainOutput) {
         Write-Output '[WARN] rtk exists but `rtk gain` did not respond; confirm this is Rust Token Killer.'
+        $script:MissingRecommended++
+    }
+    if ($null -eq $rtkOnPath) {
+        Write-Output '[WARN] RTK was found only through the fallback path and is not invokable as `rtk` from this shell. Add its directory to PATH for AI/terminal sessions.'
         $script:MissingRecommended++
     }
 }

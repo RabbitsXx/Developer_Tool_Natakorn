@@ -1,0 +1,52 @@
+# Optional CI template. Copy to .github/workflows/ci.yml only when the project needs remote CI.
+# This template supports npm/pnpm/yarn lockfiles. Adapt deliberately for Bun or project-specific setup.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies from lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            pnpm install --frozen-lockfile
+          elif [ -f yarn.lock ]; then
+            corepack enable
+            yarn install --immutable
+          elif [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "No supported lockfile found. Adapt this optional template to the project's package manager."
+            exit 2
+          fi
+
+      - name: Verify project
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f pnpm-lock.yaml ]; then PM="pnpm"; elif [ -f yarn.lock ]; then PM="yarn"; else PM="npm"; fi
+          for SCRIPT in lint typecheck test build; do
+            if node -e "const p=require('./package.json'); process.exit(p.scripts?.['$SCRIPT'] ? 0 : 1)"; then
+              $PM run "$SCRIPT"
+            else
+              echo "[SKIP] package.json has no $SCRIPT script"
+            fi
+          done

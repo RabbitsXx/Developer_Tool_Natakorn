@@ -1,0 +1,5 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json"
+  // Knip has strong defaults and framework plugins. Start with zero-config.
+  // Add entry/project/ignore rules only after a real false positive or project-specific need.
+}

@@ -9,10 +9,31 @@ Build software with evidence, reproducible setup, minimal context waste, and saf
 ## Startup protocol
 
 1. Confirm the absolute working directory, repository root, current branch, remotes, and working-tree status.
-2. Read all applicable `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, project context, run, test, and deployment documents completely.
-3. Detect the stack from source files, manifests, lockfiles, and framework configuration. Never replace an existing package manager or architecture merely to match this kit.
-4. Preserve pre-existing and unrelated changes. Do not stage, overwrite, stash, clean, reset, or delete work you do not own.
-5. Identify the smallest complete change, its acceptance criteria, and the commands needed to verify it.
+2. Read `.ai-kit/project.json` first when present. Treat it as an orientation cache, not as authority over current repository evidence.
+3. Read `START_PROMPT.md` when present, then all applicable `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, project context, run, test, and deployment documents.
+4. Determine `NEW_PROJECT`, `EXISTING_PROJECT`, or `RESUME_CONFIGURED_PROJECT`. If the kit detector is available, use `node scripts/setup-project.mjs --target <project>` or the equivalent kit path to establish/refresh non-secret project state.
+5. Detect the stack from source files, manifests, lockfiles, and framework configuration. Never replace an existing package manager or architecture merely to match this kit.
+6. Preserve pre-existing and unrelated changes. Do not stage, overwrite, stash, clean, reset, or delete work you do not own.
+7. Identify the smallest complete change, its acceptance criteria, and the commands needed to verify it.
+
+Read `docs/BOOTSTRAP_PROTOCOL.md` before changing bootstrap/state behavior. A valid resume should continue the user's task without reinstalling or reconfiguring the project.
+
+## Context-efficiency rules
+
+- Search before reading broadly. Start with the symbol, route, error, feature, or exact phrase that owns the task.
+- Initial context budget: up to 5 files for a small task and up to 15 files for a medium cross-layer task. Exceed the budget only when a discovered dependency requires it.
+- Do not repeatedly reread unchanged files without a reason. Expand from owner files to callers, tests, schema, or shared components only as needed.
+- Use Repomix only for architecture-wide tasks or when targeted search cannot identify the relevant slice.
+- Delegated agents receive one goal, explicit scope, acceptance criteria, known entry points, invariants, and required verification — not the full repository or conversation by default.
+- Read `docs/CONTEXT_EFFICIENCY.md` when changing agent/context behavior.
+
+## UI/UX skill activation
+
+- For user-facing UI/UX tasks, read `.ai-kit/skills/ui-ux/README.md` when present and load only the smallest skill subset mapped to the task.
+- Do not load the UI/UX pack for backend, database, infrastructure, or documentation-only work.
+- Substantial UI work must establish user goal, task flow, hierarchy, responsive behavior, and browser/visual QA before it is considered complete.
+- Reuse the project's existing design system/components before adding another UI library.
+- Build success is not visual acceptance. Verify changed routes in a real browser; use Playwright and `@axe-core/playwright` when configured.
 
 ## Tool-selection rules
 
@@ -22,6 +43,11 @@ Build software with evidence, reproducible setup, minimal context waste, and saf
 - Use Repomix only when broad repository context is materially useful. Review its config and generated output before sharing it.
 - Use Jina Reader for simple public pages. Use Crawl4AI only when rendering, crawling, extraction, or local control is required.
 - Use Vercel Cron for a small idempotent scheduled HTTP task. Use Inngest for durable multi-step work, retries, concurrency, waits, or observability. Do not trigger the same business job from both.
+- Use Playwright for critical user-facing browser journeys when UI behavior must be verified beyond lint/typecheck/build.
+- Use `@axe-core/playwright` with Playwright for repeatable accessibility checks when the project selects that capability.
+- Use Knip for periodic JS/TS code-health checks after substantial feature churn; review findings before deletion because dynamic/runtime entry points can look unused.
+- Use Lefthook only when stable repository quality commands exist; hooks should be fast and should not replace full CI or final verification.
+- Use production observability (Sentry, OpenTelemetry, or the project's existing standard) only when operational visibility is required; do not stack multiple observability systems without a reason.
 - Use a Docker-compatible runtime only when local services require it. OrbStack is a macOS option, not a Windows default.
 
 ## Security and data rules
@@ -34,8 +60,9 @@ Build software with evidence, reproducible setup, minimal context waste, and saf
 
 ## Database rules
 
-- Keep deployable migration history under version control.
-- Drizzle schema represents application-owned tables and types; SQL migrations must also cover Supabase RLS, policies, triggers, functions, grants, and extensions.
+- Detect and preserve the project's selected database provider and access layer. Do not force Supabase, Neon, Drizzle, Prisma, or direct `pg` merely because this kit supports them.
+- Keep deployable migration history under version control whenever the selected database architecture uses migrations.
+- ORM/schema definitions do not replace provider-specific database behavior such as RLS, policies, grants, triggers, functions, extensions, or storage rules.
 - Review generated migrations before applying them.
 - Never run a destructive migration against a linked remote database unless the user explicitly names the environment and authorizes it.
 
@@ -49,7 +76,7 @@ Run the narrowest relevant checks first, followed by broader checks when practic
 4. focused tests
 5. full tests
 6. production build
-7. browser/Preview verification for user-facing behavior
+7. browser/Preview verification for user-facing behavior; prefer Playwright for repeatable critical journeys when configured
 
 Do not claim a check passed unless it ran successfully. Record skipped checks and the reason.
 
