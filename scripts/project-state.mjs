@@ -1,9 +1,46 @@
 import { createHash } from 'node:crypto';
 import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const STATE_SCHEMA_VERSION = 1;
 const KIT_VERSION = 4;
+const KIT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SKILL_ENTRY = 'SKILL.md';
+const SKILL_PACKS = await loadSkillPacks();
+
+// Server-side dependencies that indicate the project exposes an HTTP API of its own.
+const HTTP_SERVER_DEPS = [
+  'express', 'fastify', 'koa', 'hono', '@hono/node-server', '@nestjs/core', '@hapi/hapi', 'restify',
+  '@apollo/server', 'apollo-server', 'graphql', '@trpc/server', 'elysia', 'polka', 'tinyhttp', 'h3', 'nitro',
+];
+const PYTHON_API_RE = /(fastapi|flask|django|starlette|litestar|falcon|sanic|tornado|bottle|aiohttp)/i;
+
+async function loadSkillPacks() {
+  const manifest = await readJson(path.join(KIT_ROOT, 'toolchain.json'));
+  const packs = manifest?.skills?.packs;
+  return Array.isArray(packs) ? packs : [];
+}
+
+function skillEntryMarker(pack) {
+  return `${pack.bootstrapPath}/${pack.entry ?? SKILL_ENTRY}`;
+}
+
+async function detectHttpApi(target, deps, markers) {
+  if (hasAny(deps, HTTP_SERVER_DEPS)) return true;
+  if (markers.has('pyproject.toml') || markers.has('requirements.txt') || markers.has('Pipfile')) {
+    const text = [
+      await readText(path.join(target, 'pyproject.toml')),
+      await readText(path.join(target, 'requirements.txt')),
+      await readText(path.join(target, 'Pipfile')),
+    ].join('\n');
+    if (PYTHON_API_RE.test(text)) return true;
+  }
+  for (const relative of ['src/app/api', 'app/api', 'src/pages/api', 'pages/api', 'api', 'routes']) {
+    if (await exists(path.join(target, relative))) return true;
+  }
+  return false;
+}
 
 async function exists(file) {
   try {
@@ -105,7 +142,7 @@ function detectDatabase(deps, envExample) {
 
 function detectCapabilities(deps, markers, pkg) {
   const browserE2E = '@playwright/test' in deps ? 'playwright' : ('cypress' in deps ? 'cypress' : null);
-  const uiUxSkillPack = markers.has('.ai-kit/skills/ui-ux/README.md') ? 'ui-ux-skill-pack' : null;
+  const skillPacks = SKILL_PACKS.filter((pack) => markers.has(skillEntryMarker(pack))).map((pack) => `${pack.id}-skill-pack`);
   const accessibility = '@axe-core/playwright' in deps ? 'axe-playwright' : null;
   const codeHealth = 'knip' in deps || markers.has('knip.json') || markers.has('knip.jsonc') || markers.has('knip.ts') ? 'knip' : null;
   const gitHooks = 'lefthook' in deps || markers.has('lefthook.yml') || markers.has('lefthook.yaml') ? 'lefthook' : null;
@@ -119,7 +156,7 @@ function detectCapabilities(deps, markers, pkg) {
   for (const name of ['lint', 'typecheck', 'test', 'test:e2e', 'build', 'format', 'knip']) {
     if (pkg?.scripts?.[name]) qualityScripts[name] = pkg.scripts[name];
   }
-  return { uiUxSkillPack, browserE2E, accessibility, codeHealth, gitHooks, backgroundJobs, observability, deployment, remoteCi, qualityScripts };
+  return { skillPacks, browserE2E, accessibility, codeHealth, gitHooks, backgroundJobs, observability, deployment, remoteCi, qualityScripts };
 }
 
 function stableArchitecture(detected) {
@@ -152,7 +189,7 @@ export async function inspectProject(targetPath) {
     'composer.json', 'Gemfile', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'deno.json',
     'next.config.js', 'next.config.mjs', 'next.config.ts', 'vite.config.js', 'vite.config.ts',
     'astro.config.mjs', 'vercel.json', '.vercel/project.json', '.github/workflows', '.git',
-    '.ai-kit/skills/ui-ux/README.md', 'knip.json', 'knip.jsonc', 'knip.ts', 'lefthook.yml', 'lefthook.yaml',
+    ...SKILL_PACKS.map(skillEntryMarker), 'knip.json', 'knip.jsonc', 'knip.ts', 'lefthook.yml', 'lefthook.yaml',
     'src', 'app', 'pages', 'public', 'index.html',
   ];
   const markers = new Set();
@@ -168,7 +205,7 @@ export async function inspectProject(targetPath) {
     'repomix.config.json', '.repomixignore', '.ai-kit', 'docs',
   ]);
   const nonKitTopLevel = [...topLevelNames].filter((name) => !kitOnlyNames.has(name) && !name.startsWith('.DS_Store'));
-  const kitOnlyMarkers = new Set(['.github/workflows', '.ai-kit/skills/ui-ux/README.md']);
+  const kitOnlyMarkers = new Set(['.github/workflows', ...SKILL_PACKS.map(skillEntryMarker)]);
   const meaningfulMarkers = [...markers].filter((name) => !kitOnlyMarkers.has(name));
   const initialDetectedMode = meaningfulMarkers.length === 0 && nonKitTopLevel.length === 0 ? 'NEW_PROJECT' : 'EXISTING_PROJECT';
   const mode = previousState?.kit?.configured ? 'RESUME_CONFIGURED_PROJECT' : initialDetectedMode;
@@ -187,7 +224,7 @@ export async function inspectProject(targetPath) {
 
   const availableCapabilities = [
     detected.framework,
-    detected.capabilities.uiUxSkillPack,
+    ...detected.capabilities.skillPacks,
     detected.capabilities.browserE2E,
     detected.capabilities.accessibility,
     detected.capabilities.codeHealth,
@@ -200,8 +237,18 @@ export async function inspectProject(targetPath) {
   ].filter(Boolean);
 
   const potentiallyUseful = [];
-  if (['nextjs', 'nuxt', 'astro', 'remix', 'vite', 'react'].includes(detected.framework)) {
-    if (!detected.capabilities.uiUxSkillPack) potentiallyUseful.push('ui-ux-skill-pack');
+  const projectTraits = {
+    'web-framework': ['nextjs', 'nuxt', 'astro', 'remix', 'vite', 'react'].includes(detected.framework),
+    'http-api': await detectHttpApi(target, deps, markers),
+    'database': detected.database.providers.length > 0 || detected.database.accessLayers.length > 0,
+  };
+  for (const pack of SKILL_PACKS) {
+    const capability = `${pack.id}-skill-pack`;
+    if (!detected.capabilities.skillPacks.includes(capability) && (pack.recommendFor ?? []).some((tag) => projectTraits[tag])) {
+      potentiallyUseful.push(capability);
+    }
+  }
+  if (projectTraits['web-framework']) {
     if (!detected.capabilities.browserE2E) potentiallyUseful.push('playwright');
     if (detected.capabilities.browserE2E === 'playwright' && !detected.capabilities.accessibility) potentiallyUseful.push('axe-playwright');
   }

@@ -11,17 +11,74 @@
   },
   "selfCheck": {
     "validate": "node scripts/validate-kit.mjs",
+    "skillSync": "node scripts/sync-skills.mjs --target <project>",
+    "skillDocs": "node scripts/sync-skill-docs.mjs --check",
     "verifyBootstrap": "node scripts/verify-bootstrap-protocol.mjs",
     "gitHook": "lefthook.yml",
     "rule": "Run both after changing kit files, templates, manifest contracts, or bootstrap scripts; both must report ok: true. The repository-local Lefthook pre-commit guard runs both automatically once enabled with `npx lefthook install`."
   },
   "skills": {
-    "uiUx": {
-      "version": 1,
-      "sourcePath": "skills/ui-ux",
-      "bootstrapPath": ".ai-kit/skills/ui-ux",
-      "activation": "Load only for user-facing UI/UX work; choose the smallest applicable subset from README.md."
-    }
+    "spec": "agentskills.io/specification",
+    "entry": "SKILL.md",
+    "referencesPath": "references",
+    "syncScript": "scripts/sync-skills.mjs",
+    "docSync": "scripts/sync-skill-docs.mjs",
+    "recommendForTags": ["web-framework", "http-api", "database"],
+    "portable": "Every pack follows the open Agent Skills format, so the same directory can be copied into any harness skills directory without rewriting it.",
+    "packs": [
+      {
+        "id": "ui-ux",
+        "version": 2,
+        "sourcePath": "skills/ui-ux",
+        "bootstrapPath": ".ai-kit/skills/ui-ux",
+        "activation": "Load only for user-facing UI/UX work; read SKILL.md, then open only the reference files the task maps to.",
+        "summary": "User-facing pages, flows, component systems, responsive behavior, and visual QA.",
+        "summaryTh": "งาน UI ที่ผู้ใช้เห็น: หน้า, flow, ระบบคอมโพเนนต์, responsive และ visual QA",
+        "recommendFor": ["web-framework"]
+      },
+      {
+        "id": "api",
+        "version": 1,
+        "sourcePath": "skills/api",
+        "bootstrapPath": ".ai-kit/skills/api",
+        "activation": "Load only for endpoint, route-handler, request/response contract, or API test work; read SKILL.md, then open only the reference files the task maps to.",
+        "summary": "HTTP endpoints and route handlers, request/response contracts, error shapes, authorization boundaries, and API tests.",
+        "summaryTh": "งาน HTTP endpoint/route handler, สัญญา request/response, error shape, ขอบเขต authz และ API test",
+        "recommendFor": ["http-api"]
+      },
+      {
+        "id": "data-layer",
+        "version": 1,
+        "sourcePath": "skills/data-layer",
+        "bootstrapPath": ".ai-kit/skills/data-layer",
+        "activation": "Load only for schema, migration, query, or data-access work; read SKILL.md, then open only the reference files the task maps to.",
+        "summary": "Schema and constraint design, migration safety and rollback, query and index work, tenant scoping, data verification.",
+        "summaryTh": "งาน schema/constraint, ความปลอดภัยของ migration, query และ index, tenant scoping, การตรวจข้อมูล",
+        "recommendFor": ["database"]
+      },
+      {
+        "id": "testing",
+        "version": 1,
+        "sourcePath": "skills/testing",
+        "bootstrapPath": ".ai-kit/skills/testing",
+        "activation": "Load only when choosing what to verify, adding or repairing tests, fixing a bug that must not return, or deciding what CI gates; read SKILL.md, then open only the reference files the task maps to.",
+        "summary": "Choosing what to verify, test levels, browser journeys, flakiness and test data, regression tests.",
+        "summaryTh": "การเลือกสิ่งที่จะตรวจสอบ, ระดับของ test, browser journey, flakiness และ test data, regression test",
+        "recommendFor": ["web-framework", "http-api"]
+      },
+      {
+        "id": "release",
+        "version": 1,
+        "sourcePath": "skills/release",
+        "bootstrapPath": ".ai-kit/skills/release",
+        "activation": "Load only for release work; read SKILL.md, then open only the reference files the task maps to.",
+        "summary": "Planning and executing a production release safely: preflight verification, deploy execution, rollback readiness, release observability, and post-release confirmation.",
+        "summaryTh": "การวางแผนและ execute release อย่างปลอดภัย: preflight, deploy, rollback, observability หลัง release และการยืนยันหลังปล่อยจริง",
+        "recommendFor": [
+          "web-framework"
+        ]
+      }
+    ]
   },
   "principles": [
     "complex backend, simple workflow",

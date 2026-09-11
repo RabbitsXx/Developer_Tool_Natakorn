@@ -45,32 +45,13 @@ foreach ($copy in $copies) {
     Write-Output ("[ADD]  {0}" -f $copy.Destination)
 }
 
-$skillCopies = @(
-    @{ Source = 'skills\ui-ux\README.md'; Destination = '.ai-kit\skills\ui-ux\README.md' },
-    @{ Source = 'skills\ui-ux\01-ux-architect.md'; Destination = '.ai-kit\skills\ui-ux\01-ux-architect.md' },
-    @{ Source = 'skills\ui-ux\02-design-system.md'; Destination = '.ai-kit\skills\ui-ux\02-design-system.md' },
-    @{ Source = 'skills\ui-ux\03-production-ui-builder.md'; Destination = '.ai-kit\skills\ui-ux\03-production-ui-builder.md' },
-    @{ Source = 'skills\ui-ux\04-responsive-mobile.md'; Destination = '.ai-kit\skills\ui-ux\04-responsive-mobile.md' },
-    @{ Source = 'skills\ui-ux\05-visual-qa.md'; Destination = '.ai-kit\skills\ui-ux\05-visual-qa.md' }
-)
-
-foreach ($copy in $skillCopies) {
-    $source = Join-Path $kitRoot $copy.Source
-    $destination = Join-Path $target $copy.Destination
-
-    if (Test-Path -LiteralPath $destination) {
-        Write-Output ("[SKIP] {0} already exists; preserve project-local skill changes." -f $copy.Destination)
-        continue
-    }
-
-    $parent = Split-Path -Parent $destination
-    if (-not (Test-Path -LiteralPath $parent)) {
-        New-Item -ItemType Directory -Path $parent | Out-Null
-    }
-
-    Copy-Item -LiteralPath $source -Destination $destination
-    Write-Output ("[ADD]  {0}" -f $copy.Destination)
+$syncScript = Join-Path $kitRoot 'scripts\sync-skills.mjs'
+if (-not (Test-Path -LiteralPath $syncScript)) {
+    throw 'Agent Skills sync script is missing.'
 }
+
+& node $syncScript --target $target
+if ($LASTEXITCODE -ne 0) { throw 'Agent Skills sync failed.' }
 
 $setupScript = Join-Path $kitRoot 'scripts\setup-project.mjs'
 if (Test-Path -LiteralPath $setupScript) {
@@ -79,5 +60,5 @@ if (Test-Path -LiteralPath $setupScript) {
 }
 
 Write-Output 'Done. Paste START_PROMPT.md into the AI agent, then let it continue from .ai-kit/project.json.'
-Write-Output 'UI/UX skills installed as instructions only under .ai-kit/skills/ui-ux; load them only for relevant UI work.'
+Write-Output 'Agent Skills installed as instructions only under .ai-kit/skills/ (SKILL.md + references per pack); load only the pack that matches the task.'
 Write-Output 'Optional starters (not auto-installed): Playwright, axe accessibility, Knip, Lefthook, and GitHub Actions templates under templates/optional/'

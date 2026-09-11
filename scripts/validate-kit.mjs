@@ -1,6 +1,7 @@
 import { readFile, readdir, access } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findSkillDocDrift } from './sync-skill-docs.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -18,17 +19,16 @@ const required = [
   'docs/QUALITY_AND_PRODUCTION.md',
   'templates/AGENTS.md',
   'templates/PROJECT_CONTEXT.md',
-  'skills/ui-ux/README.md',
-  'skills/ui-ux/01-ux-architect.md',
-  'skills/ui-ux/02-design-system.md',
-  'skills/ui-ux/03-production-ui-builder.md',
-  'skills/ui-ux/04-responsive-mobile.md',
-  'skills/ui-ux/05-visual-qa.md',
+  // Skill pack files are not listed here: they are validated from toolchain.json `skills.packs`, so
+  // registering a new pack is a manifest change instead of an edit to this list.
   'templates/optional/playwright.config.ts',
   'templates/optional/accessibility.spec.ts',
   'templates/optional/knip.jsonc',
   'templates/optional/lefthook.yml.example',
   'templates/optional/github-actions-ci.yml',
+  'scripts/sync-skills.mjs',
+  'scripts/sync-skill-docs.mjs',
+  'scripts/new-skill.mjs',
   'scripts/project-state.mjs',
   'scripts/setup-project.mjs',
   'scripts/verify-bootstrap-protocol.mjs',
@@ -52,7 +52,7 @@ for (const id of ['neon', 'supabase', 'postgresql']) {
   if (!toolchain.databaseOptions.some((item) => item.id === id)) throw new Error(`missing database option: ${id}`);
 }
 const startPrompt = await readFile(path.join(root, 'START_PROMPT.md'), 'utf8');
-for (const phrase of ['NEW_PROJECT', 'EXISTING_PROJECT', 'RESUME_CONFIGURED_PROJECT', '.ai-kit/project.json', 'THINGS YOU WILL NOT CHANGE', '.ai-kit/skills/ui-ux/README.md', 'Knip', 'Lefthook']) {
+for (const phrase of ['NEW_PROJECT', 'EXISTING_PROJECT', 'RESUME_CONFIGURED_PROJECT', '.ai-kit/project.json', 'THINGS YOU WILL NOT CHANGE', '.ai-kit/skills/ui-ux/SKILL.md', 'Knip', 'Lefthook']) {
   if (!startPrompt.includes(phrase)) throw new Error(`START_PROMPT.md contract missing: ${phrase}`);
 }
 const agents = await readFile(path.join(root, 'AGENTS.md'), 'utf8');
@@ -63,7 +63,7 @@ const bootstrapPs1 = await readFile(path.join(root, 'scripts/bootstrap-project.p
 const bootstrapSh = await readFile(path.join(root, 'scripts/bootstrap-project.sh'), 'utf8');
 for (const [name, text] of [['PowerShell bootstrap', bootstrapPs1], ['shell bootstrap', bootstrapSh]]) {
   if (!text.includes('START_PROMPT.md') || !text.includes('setup-project.mjs')) throw new Error(`${name} does not establish AI bootstrap state`);
-  if (!text.includes('.ai-kit') || !text.includes('skills/ui-ux')) throw new Error(`${name} does not bootstrap the UI/UX skill pack`);
+  if (!text.includes('.ai-kit') || !text.includes('sync-skills.mjs')) throw new Error(`${name} does not synchronize Agent Skills packs`);
 }
 // PowerShell 5.1 reads BOM-less UTF-8 scripts as ANSI, so one non-ASCII character in a .ps1 file
 // becomes invalid UTF-8 in captured output that log tools and gates then cannot read. Node and
@@ -91,6 +91,50 @@ for (const target of ['scripts/validate-kit.mjs', 'scripts/verify-bootstrap-prot
 }
 if (!kitHook.includes('pre-commit')) throw new Error('lefthook.yml must guard pre-commit');
 
+// Agent Skills contract: every registered pack stays installable in any harness that reads SKILL.md.
+const registeredPacks = toolchain.skills?.packs;
+if (!Array.isArray(registeredPacks) || registeredPacks.length < 2) throw new Error('toolchain.skills.packs must register at least the ui-ux and api packs');
+if (toolchain.skills?.entry !== 'SKILL.md') throw new Error('toolchain skills.entry must be SKILL.md');
+const knownTags = toolchain.skills?.recommendForTags ?? [];
+const skillReport = [];
+const pendingScaffolds = [];
+for (const pack of registeredPacks) {
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(pack.id ?? '')) throw new Error(`skill pack id is not spec-valid: ${pack.id}`);
+  if (pack.sourcePath !== `skills/${pack.id}`) throw new Error(`skill pack ${pack.id} sourcePath must be skills/${pack.id}`);
+  if (pack.bootstrapPath !== `.ai-kit/skills/${pack.id}`) throw new Error(`skill pack ${pack.id} bootstrapPath must be .ai-kit/skills/${pack.id}`);
+  if (!pack.activation) throw new Error(`skill pack ${pack.id} is missing activation guidance`);
+  if (!pack.summary || !pack.summaryTh) throw new Error(`skill pack ${pack.id} needs summary and summaryTh for the generated docs`);
+  for (const tag of pack.recommendFor ?? []) {
+    if (!knownTags.includes(tag)) throw new Error(`skill pack ${pack.id} uses unknown recommendFor tag: ${tag}`);
+  }
+  const skillDir = path.join(root, pack.sourcePath);
+  const skillEntry = await readFile(path.join(skillDir, 'SKILL.md'), 'utf8');
+  const frontmatter = skillEntry.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+  if (!frontmatter) throw new Error(`${pack.sourcePath}/SKILL.md must start with YAML frontmatter`);
+  const skillName = frontmatter[1].match(/^name:\s*(\S+)\s*$/m)?.[1];
+  const skillDescription = frontmatter[1].match(/^description:\s*(.+)$/m)?.[1]?.trim();
+  if (skillName !== pack.id) throw new Error(`${pack.sourcePath}/SKILL.md name must match the pack id: ${skillName} !== ${pack.id}`);
+  if (skillName !== path.basename(skillDir)) throw new Error(`${pack.sourcePath}/SKILL.md name must match its directory: ${skillName}`);
+  if (!skillDescription || skillDescription.length > 1024) throw new Error(`${pack.sourcePath}/SKILL.md description must be 1-1024 characters`);
+  const bodyLines = skillEntry.slice(frontmatter[0].length).trimEnd().split(/\r?\n/).length;
+  if (bodyLines > 500) throw new Error(`${pack.sourcePath}/SKILL.md body must stay under 500 lines (found ${bodyLines})`);
+  const references = [...new Set([...skillEntry.matchAll(/\(references\/[^)]+\)/g)].map((match) => match[0].slice(1, -1)))];
+  if (references.length === 0) throw new Error(`${pack.sourcePath}/SKILL.md must reference progressive-disclosure files under references/`);
+  let todoMarkers = skillEntry.includes('<!-- TODO') ? 1 : 0;
+  for (const reference of references) {
+    await access(path.join(skillDir, reference));
+    if ((await readFile(path.join(skillDir, reference), 'utf8')).includes('<!-- TODO')) todoMarkers += 1;
+  }
+  if (todoMarkers) pendingScaffolds.push(pack.id);
+  skillReport.push({ id: pack.id, version: pack.version ?? null, entry: toolchain.skills.entry, bodyLines, references: references.length });
+}
+
+// The generated pack tables must match the manifest, so a registered pack cannot ship with stale docs.
+const skillDocDrift = await findSkillDocDrift(toolchain, root);
+if (skillDocDrift.length) {
+  throw new Error(`skill pack docs are out of date (${skillDocDrift.map((item) => `${item.file}: ${item.reason}`).join(', ')}); run node scripts/sync-skill-docs.mjs`);
+}
+
 console.log(JSON.stringify({
   ok: true,
   schemaVersion: toolchain.schemaVersion,
@@ -102,7 +146,10 @@ console.log(JSON.stringify({
   accessibility: toolchain.tools.find((tool) => tool.id === 'axe-playwright')?.tier,
   codeHealth: toolchain.tools.find((tool) => tool.id === 'knip')?.tier,
   gitHooks: toolchain.tools.find((tool) => tool.id === 'lefthook')?.tier,
-  uiUxSkillPack: toolchain.skills?.uiUx,
+  skills: { spec: toolchain.skills?.spec, syncScript: toolchain.skills?.syncScript, docSync: toolchain.skills?.docSync, packs: skillReport },
+  skillDocs: { generated: ['README.md', 'docs/INSTALLATION.md'], inSync: true },
+  // Non-fatal: a scaffolded pack passes validation while its TODO markers are still unfilled.
+  skillPacksPendingContent: pendingScaffolds,
   observability: toolchain.tools.find((tool) => tool.id === 'sentry-or-opentelemetry')?.tier,
   bootstrap: toolchain.bootstrap,
   optionalCI: true,

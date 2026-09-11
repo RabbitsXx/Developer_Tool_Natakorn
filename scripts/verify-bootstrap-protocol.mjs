@@ -91,6 +91,44 @@ try {
   assert(inspection.pendingDecisions.includes('resolve_multiple_lockfiles_before_package_manager_changes'));
   result.multipleLockfileGuard = 'PASS';
 
+  // An API-shaped project with no pack yet is told the api pack exists.
+  const apiProject = path.join(root, 'api-app');
+  await mkdir(apiProject, { recursive: true });
+  await writeFile(path.join(apiProject, 'package.json'), JSON.stringify({
+    name: 'api-app',
+    scripts: { test: 'node --test' },
+    dependencies: { express: '^5.0.0' },
+  }, null, 2));
+  await writeFile(path.join(apiProject, 'package-lock.json'), '{}');
+  inspection = await inspectProject(apiProject);
+  assert(inspection.potentiallyUsefulCapabilities.includes('api-skill-pack'));
+  await writeProjectState(apiProject, buildProjectState(inspection, new Date('2026-01-01T00:00:00Z')));
+
+  // Installing the pack is detected as a capability without disturbing the architecture fingerprint.
+  await mkdir(path.join(apiProject, '.ai-kit', 'skills', 'api'), { recursive: true });
+  await writeFile(path.join(apiProject, '.ai-kit', 'skills', 'api', 'SKILL.md'), '---\nname: api\n---\n');
+  inspection = await inspectProject(apiProject);
+  assert(inspection.detected.capabilities.skillPacks.includes('api-skill-pack'));
+  assert(inspection.availableCapabilities.includes('api-skill-pack'));
+  assert(!inspection.potentiallyUsefulCapabilities.includes('api-skill-pack'));
+  assert.equal(inspection.driftDetected, false);
+  result.apiPackDetection = 'PASS';
+  result.skillPackKeepsFingerprintStable = 'PASS';
+
+  // A storage-shaped project is told the data-layer pack exists, without any pack-specific code path.
+  const dataProject = path.join(root, 'data-app');
+  await mkdir(dataProject, { recursive: true });
+  await writeFile(path.join(dataProject, 'package.json'), JSON.stringify({
+    name: 'data-app',
+    scripts: { test: 'node --test' },
+    dependencies: { 'drizzle-orm': '^0.44.0', pg: '^8.0.0' },
+  }, null, 2));
+  await writeFile(path.join(dataProject, 'package-lock.json'), '{}');
+  inspection = await inspectProject(dataProject);
+  assert(inspection.potentiallyUsefulCapabilities.includes('data-layer-skill-pack'));
+  assert(!inspection.potentiallyUsefulCapabilities.includes('api-skill-pack'));
+  result.dataLayerPackRecommendation = 'PASS';
+
   console.log(JSON.stringify({ ok: true, ...result }, null, 2));
 } finally {
   await rm(root, { recursive: true, force: true });
