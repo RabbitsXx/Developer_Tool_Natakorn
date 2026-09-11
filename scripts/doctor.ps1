@@ -61,7 +61,7 @@ function Write-ToolResult {
     }
 }
 
-Write-Output 'Ultimate VibeCoder Ecosystem — workstation doctor'
+Write-Output 'Ultimate VibeCoder Ecosystem - workstation doctor'
 Write-Output ("OS: {0} {1}" -f [System.Runtime.InteropServices.RuntimeInformation]::OSDescription, [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)
 Write-Output ''
 

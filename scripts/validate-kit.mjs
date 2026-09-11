@@ -1,4 +1,4 @@
-import { readFile, access } from 'node:fs/promises';
+import { readFile, readdir, access } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -33,6 +33,7 @@ const required = [
   'scripts/setup-project.mjs',
   'scripts/verify-bootstrap-protocol.mjs',
   'scripts/verify-tools.ps1',
+  'scripts/tool-report.mjs',
 ];
 
 for (const file of required) await access(path.join(root, file));
@@ -64,6 +65,21 @@ for (const [name, text] of [['PowerShell bootstrap', bootstrapPs1], ['shell boot
   if (!text.includes('START_PROMPT.md') || !text.includes('setup-project.mjs')) throw new Error(`${name} does not establish AI bootstrap state`);
   if (!text.includes('.ai-kit') || !text.includes('skills/ui-ux')) throw new Error(`${name} does not bootstrap the UI/UX skill pack`);
 }
+// PowerShell 5.1 reads BOM-less UTF-8 scripts as ANSI, so one non-ASCII character in a .ps1 file
+// becomes invalid UTF-8 in captured output that log tools and gates then cannot read. Node and
+// shell scripts are UTF-8 by contract, so only .ps1 files carry this risk.
+for (const file of (await readdir(path.join(root, 'scripts'))).filter((name) => name.endsWith('.ps1'))) {
+  const bytes = await readFile(path.join(root, 'scripts', file));
+  if (bytes.some((byte) => byte > 0x7e && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d)) {
+    throw new Error(`scripts/${file} contains non-ASCII bytes; PowerShell 5.1 mangles BOM-less UTF-8 output`);
+  }
+}
+
+const toolReport = await readFile(path.join(root, 'scripts/tool-report.mjs'), 'utf8');
+for (const evidence of ['toolchain.json', 'tool-report.json', 'tool-report.md', 'tool-report.html']) {
+  if (!toolReport.includes(evidence)) throw new Error(`tool-report.mjs does not handle ${evidence}`);
+}
+
 const verifyTools = await readFile(path.join(root, 'scripts/verify-tools.ps1'), 'utf8');
 for (const evidence of ['doctor.ps1', 'scripts/validate-kit.mjs', 'scripts/verify-bootstrap-protocol.mjs']) {
   if (!verifyTools.includes(evidence)) throw new Error(`verify-tools.ps1 does not run ${evidence}`);

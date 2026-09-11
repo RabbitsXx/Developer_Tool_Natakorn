@@ -28,7 +28,7 @@ check_tool() {
   fi
 }
 
-echo 'Ultimate VibeCoder Ecosystem — workstation doctor'
+echo 'Ultimate VibeCoder Ecosystem - workstation doctor'
 printf 'OS: %s %s\n\n' "$(uname -s)" "$(uname -m)"
 
 check_tool git required git

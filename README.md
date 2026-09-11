@@ -99,7 +99,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
 │   ├── bootstrap-project.ps1 # ลง template + state ในโปรเจกต์ Windows
 │   ├── bootstrap-project.sh  # ลง template + state ในโปรเจกต์ macOS/Linux
 │   ├── validate-kit.mjs      # ตรวจไฟล์บังคับ + manifest contract ของ kit
-│   └── verify-bootstrap-protocol.mjs # ทดสอบ NEW/EXISTING/RESUME + drift + secret isolation
+│   ├── verify-bootstrap-protocol.mjs # ทดสอบ NEW/EXISTING/RESUME + drift + secret isolation
+│   └── tool-report.mjs       # probe ทุก tool ใน toolchain.json → JSON + Markdown + HTML
 ├── skills/
 │   └── ui-ux/                # instruction-only skill pack (bootstrap ไปที่ .ai-kit/skills/ui-ux)
 └── templates/                # ไฟล์ตั้งต้นที่ bootstrap นำไปใช้
@@ -130,6 +131,26 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-tools.ps1
 ```
 
 Hook เป็นตัวช่วย ไม่ใช่เงื่อนไขบังคับ: ถ้าเครื่องไหนยังไม่มี Lefthook คำสั่งมือด้านบนยังใช้ได้ตามปกติ และ `templates/optional/lefthook.yml.example` ยังเป็น starter สำหรับโปรเจกต์ปลายทางที่ใช้สคริปต์ของตัวเอง
+
+### รายงานสถานะเครื่องมือ (tool-report)
+
+`tool-report.mjs` อ่านรายการ tool จาก `toolchain.json` แล้ว probe ทีละตัว โดยเขียนผลออก 3 แบบ:
+
+```bash
+node scripts/tool-report.mjs                     # probe จาก root ของ kit
+node scripts/tool-report.mjs --cwd ../apps/web   # probe ในโปรเจกต์ที่มี dependency ติดตั้งอยู่
+node scripts/tool-report.mjs --json              # สำหรับ agent: พิมพ์บรรทัดเดียว
+```
+
+| ไฟล์ | ใช้ทำอะไร |
+|---|---|
+| `tool-report.json` | ผลเต็ม — คำสั่ง, exit code, เวลา, output ดิบ |
+| `tool-report.md` | ตารางพร้อมวางใน README |
+| `tool-report.html` | หน้าสรุปสำหรับคน เปิดในเบราว์เซอร์ได้เลย ไม่ต้องมี server |
+
+ค่าเริ่มต้น probe แบบ **offline**: `npx <pkg>` ถูกเติม `--no-install` ให้อัตโนมัติ จึงไม่มีการดาวน์โหลดเงียบ ๆ ระหว่างตรวจ (ใช้ `--allow-install` เมื่อต้องการให้ตรวจผ่านเน็ต)
+
+Terminal พิมพ์แค่บรรทัดละ tool + สรุป + path ของรายงาน (19 tool ≈ 400 tokens) ส่วนรายละเอียดทั้งหมดอยู่ในไฟล์ จึงไม่กิน context จนกว่าจะมีคนอ่าน — และหน้า HTML ไม่กิน token เลยเพราะ agent ไม่ต้องอ่านมัน
 
 ## ผลการทดสอบเครื่องมือ (verified on a real workstation)
 

@@ -66,25 +66,32 @@
   "tools": [
     { "id": "git", "tier": "required", "verify": "git --version" },
     { "id": "node", "tier": "required", "minimum": "22", "verify": "node --version" },
-    { "id": "rtk", "tier": "recommended", "verify": "rtk gain" },
+    { "id": "npm", "tier": "required", "verify": "npm --version" },
+    { "id": "pnpm", "tier": "optional", "verify": "pnpm --version" },
+    { "id": "yarn", "tier": "optional", "verify": "yarn --version" },
+    { "id": "bun", "tier": "optional", "verify": "bun --version" },
+    { "id": "rtk", "tier": "recommended", "verify": "rtk gain", "probe": "rtk --version" },
+    { "id": "gh", "tier": "recommended-for-github-workflow", "verify": "gh --version" },
+    { "id": "python", "tier": "on-demand", "verify": "python --version" },
     { "id": "playwright", "tier": "recommended-for-user-facing-web", "installScope": "project-local dev dependency", "verify": "npx playwright --version" },
-    { "id": "axe-playwright", "tier": "recommended-with-playwright-for-user-facing-web", "package": "@axe-core/playwright", "installScope": "project-local dev dependency", "verify": "dependency + accessibility test" },
-    { "id": "knip", "tier": "recommended-for-js-ts-code-health", "installScope": "project-local dev dependency", "verify": "npx knip" },
-    { "id": "lefthook", "tier": "optional-local-quality-guard", "installScope": "project-local or workstation tool", "verify": "lefthook version" },
-    { "id": "repomix", "tier": "on-demand", "verify": "npx repomix@latest --version" },
+    { "id": "axe-playwright", "tier": "recommended-with-playwright-for-user-facing-web", "package": "@axe-core/playwright", "installScope": "project-local dev dependency", "verify": "dependency + accessibility test", "probe": "node -e \"require.resolve('@axe-core/playwright')\"", "probeKind": "dependency" },
+    { "id": "knip", "tier": "recommended-for-js-ts-code-health", "installScope": "project-local dev dependency", "verify": "npx knip", "probe": "npx knip --version" },
+    { "id": "lefthook", "tier": "optional-local-quality-guard", "installScope": "project-local or workstation tool", "verify": "lefthook version", "probe": "npx lefthook version" },
+    { "id": "repomix", "tier": "on-demand", "verify": "npx repomix@latest --version", "probe": "npx repomix --version" },
     { "id": "bruno", "tier": "recommended-for-api-work", "verify": "bru --version" },
     {
       "id": "container-runtime",
       "tier": "on-demand",
+      "probeAlternatives": ["docker --version", "podman --version"],
       "alternatives": {
         "windows": ["Docker Desktop", "Rancher Desktop", "Podman"],
         "macos": ["OrbStack", "Docker Desktop", "Rancher Desktop", "Podman"],
         "linux": ["Docker Engine", "Podman"]
       }
     },
-    { "id": "crawl4ai", "tier": "on-demand", "pythonMinimum": "3.10", "installScope": "isolated Python environment" },
-    { "id": "jina-reader", "tier": "on-demand", "installScope": "HTTP API; no local installation required" },
-    { "id": "sentry-or-opentelemetry", "tier": "recommended-for-production", "installScope": "project-selected observability stack" }
+    { "id": "crawl4ai", "tier": "on-demand", "pythonMinimum": "3.10", "installScope": "isolated Python environment", "probe": "crawl4ai-doctor", "probeNote": "requires Python 3.10+ in an isolated environment" },
+    { "id": "jina-reader", "tier": "on-demand", "installScope": "HTTP API; no local installation required", "probeKind": "remote", "probeNote": "nothing to install locally; verified by calling the API with a credential" },
+    { "id": "sentry-or-opentelemetry", "tier": "recommended-for-production", "installScope": "project-selected observability stack", "probeKind": "project-specific", "probeNote": "depends on the observability stack each project selects" }
   ],
   "databaseOptions": [
     { "id": "neon", "when": "Managed PostgreSQL is needed without Supabase platform features" },
