@@ -180,6 +180,41 @@ Terminal พิมพ์แค่บรรทัดละ tool + สรุป + 
 - `@axe-core/playwright` และ `lefthook` ถูกนับเป็น unused devDependencies ตามคาด เพราะแอปไม่ได้ import เอง (ใช้ผ่าน CLI/spec)
 - พบช่องโหว่จริงใน guard ของ kit: staged เฉพาะ `lefthook.yml` แล้วได้ `kit-self-check (skip) no matching staged files` → เพิ่ม `lefthook.yml` เข้า glob แล้วรันซ้ำได้ `✔️ kit-self-check (0.20 seconds)`
 
+<!-- tool-report:start (generated; edit outside this block) -->
+
+_19 tools probed 2026-09-11T02:59:33.054Z on win32 10.0.26100, probe cwd `../apps/web` (offline probing (npx --no-install))._
+
+### เครื่องมือที่ยืนยันแล้ว (12)
+
+| เครื่องมือ | Tier | คำสั่งที่รัน | ผลที่ได้จริง |
+|---|---|---|---|
+| `git` | required | `git --version` | `2.52.0.windows.1` |
+| `node` | required | `node --version` | `24.19.0` |
+| `npm` | required | `npm --version` | `11.17.0` |
+| `pnpm` | optional | `pnpm --version` | `11.24.0` |
+| `rtk` | recommended | `rtk --version` | `0.48.0` |
+| `gh` | recommended-for-github-workflow | `gh --version` | `2.86.0` |
+| `python` | on-demand | `python --version` | `3.14.2` |
+| `playwright` | recommended-for-user-facing-web | `npx --no-install playwright --version` | `1.63.0` |
+| `axe-playwright` | recommended-with-playwright-for-user-facing-web | `node -e "require.resolve('@axe-core/playwright')"` | — |
+| `knip` | recommended-for-js-ts-code-health | `npx --no-install knip --version` | `6.35.1` |
+| `lefthook` | optional-local-quality-guard | `npx --no-install lefthook version` | `2.1.12` |
+| `bruno` | recommended-for-api-work | `bru --version` | `4.1.0` |
+
+### ยังไม่ยืนยันบนเครื่องนี้ (7)
+
+| เครื่องมือ | Tier | สถานะ | เหตุผล / สิ่งที่ต้องมี |
+|---|---|---|---|
+| `yarn` | optional | ไม่พบบนเครื่องนี้ | 'yarn' is not recognized as an internal or external command, |
+| `bun` | optional | ไม่พบบนเครื่องนี้ | 'bun' is not recognized as an internal or external command, |
+| `repomix` | on-demand | ไม่พบบนเครื่องนี้ | npm error npx canceled due to missing packages and no YES option: ["repomix@1.18.0"] |
+| `container-runtime` | on-demand | ไม่พบบนเครื่องนี้ | 'podman' is not recognized as an internal or external command, |
+| `crawl4ai` | on-demand | ไม่พบบนเครื่องนี้ | 'crawl4ai-doctor' is not recognized as an internal or external command, |
+| `jina-reader` | on-demand | ตรวจอัตโนมัติไม่ได้ | nothing to install locally; verified by calling the API with a credential |
+| `sentry-or-opentelemetry` | recommended-for-production | ตรวจอัตโนมัติไม่ได้ | depends on the observability stack each project selects |
+
+<!-- tool-report:end -->
+
 ### B. ยังไม่ทดสอบบนเครื่องนี้ (ไม่นับเป็นผ่าน)
 
 | เครื่องมือ | สถานะที่ตรวจได้ | คำสั่งที่ใช้ยืนยันด้วยตัวเอง |

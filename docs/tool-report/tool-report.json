@@ -1,0 +1,228 @@
+{
+  "generatedAt": "2026-09-11T02:59:33.054Z",
+  "host": {
+    "platform": "win32 10.0.26100",
+    "arch": "x64",
+    "node": "v24.19.0",
+    "shell": "offline probing (npx --no-install)"
+  },
+  "probeCwd": "../apps/web",
+  "probeTimeoutMs": 8000,
+  "elapsedMs": 7812,
+  "counts": {
+    "ok": 12,
+    "missing": 5,
+    "not-applicable": 2
+  },
+  "tools": [
+    {
+      "id": "git",
+      "tier": "required",
+      "status": "ok",
+      "command": "git --version",
+      "exitCode": 0,
+      "durationMs": 42,
+      "version": "2.52.0.windows.1",
+      "detail": "git version 2.52.0.windows.1",
+      "raw": "git version 2.52.0.windows.1\n"
+    },
+    {
+      "id": "node",
+      "tier": "required",
+      "status": "ok",
+      "command": "node --version",
+      "exitCode": 0,
+      "durationMs": 44,
+      "version": "24.19.0",
+      "detail": "v24.19.0",
+      "raw": "v24.19.0\n"
+    },
+    {
+      "id": "npm",
+      "tier": "required",
+      "status": "ok",
+      "command": "npm --version",
+      "exitCode": 0,
+      "durationMs": 257,
+      "version": "11.17.0",
+      "detail": "11.17.0",
+      "raw": "11.17.0\n"
+    },
+    {
+      "id": "pnpm",
+      "tier": "optional",
+      "status": "ok",
+      "command": "pnpm --version",
+      "exitCode": 0,
+      "durationMs": 408,
+      "version": "11.24.0",
+      "detail": "11.24.0",
+      "raw": "11.24.0\n"
+    },
+    {
+      "id": "yarn",
+      "tier": "optional",
+      "status": "missing",
+      "command": "yarn --version",
+      "exitCode": 1,
+      "durationMs": 27,
+      "version": null,
+      "detail": "'yarn' is not recognized as an internal or external command,\r",
+      "raw": "\n'yarn' is not recognized as an internal or external command,\r\noperable program or batch file."
+    },
+    {
+      "id": "bun",
+      "tier": "optional",
+      "status": "missing",
+      "command": "bun --version",
+      "exitCode": 1,
+      "durationMs": 25,
+      "version": null,
+      "detail": "'bun' is not recognized as an internal or external command,\r",
+      "raw": "\n'bun' is not recognized as an internal or external command,\r\noperable program or batch file."
+    },
+    {
+      "id": "rtk",
+      "tier": "recommended",
+      "status": "ok",
+      "command": "rtk --version",
+      "exitCode": 0,
+      "durationMs": 41,
+      "version": "0.48.0",
+      "detail": "rtk 0.48.0",
+      "raw": "rtk 0.48.0\n"
+    },
+    {
+      "id": "gh",
+      "tier": "recommended-for-github-workflow",
+      "status": "ok",
+      "command": "gh --version",
+      "exitCode": 0,
+      "durationMs": 71,
+      "version": "2.86.0",
+      "detail": "gh version 2.86.0 (2026-01-21)",
+      "raw": "gh version 2.86.0 (2026-01-21)\nhttps://github.com/cli/cli/releases/tag/v2.86.0\n"
+    },
+    {
+      "id": "python",
+      "tier": "on-demand",
+      "status": "ok",
+      "command": "python --version",
+      "exitCode": 0,
+      "durationMs": 35,
+      "version": "3.14.2",
+      "detail": "Python 3.14.2",
+      "raw": "Python 3.14.2\n"
+    },
+    {
+      "id": "playwright",
+      "tier": "recommended-for-user-facing-web",
+      "status": "ok",
+      "command": "npx --no-install playwright --version",
+      "exitCode": 0,
+      "durationMs": 1198,
+      "version": "1.63.0",
+      "detail": "Version 1.63.0",
+      "raw": "Version 1.63.0\n"
+    },
+    {
+      "id": "axe-playwright",
+      "tier": "recommended-with-playwright-for-user-facing-web",
+      "status": "ok",
+      "command": "node -e \"require.resolve('@axe-core/playwright')\"",
+      "exitCode": 0,
+      "durationMs": 65,
+      "version": null,
+      "detail": "",
+      "raw": "\n"
+    },
+    {
+      "id": "knip",
+      "tier": "recommended-for-js-ts-code-health",
+      "status": "ok",
+      "command": "npx --no-install knip --version",
+      "exitCode": 0,
+      "durationMs": 1260,
+      "version": "6.35.1",
+      "detail": "6.35.1",
+      "raw": "6.35.1\n"
+    },
+    {
+      "id": "lefthook",
+      "tier": "optional-local-quality-guard",
+      "status": "ok",
+      "command": "npx --no-install lefthook version",
+      "exitCode": 0,
+      "durationMs": 831,
+      "version": "2.1.12",
+      "detail": "2.1.12",
+      "raw": "2.1.12\n"
+    },
+    {
+      "id": "repomix",
+      "tier": "on-demand",
+      "status": "missing",
+      "command": "npx --no-install repomix --version",
+      "exitCode": 1,
+      "durationMs": 2214,
+      "version": null,
+      "detail": "npm error npx canceled due to missing packages and no YES option: [\"repomix@1.18.0\"]",
+      "raw": "\nnpm error npx canceled due to missing packages and no YES option: [\"repomix@1.18.0\"]\nnpm error A complete log of this run can be found in: C:\\Users\\LoliR\\AppData\\Local\\npm-cache\\_logs\\2026-09-11T02_59_29_773Z-debug-0.log"
+    },
+    {
+      "id": "bruno",
+      "tier": "recommended-for-api-work",
+      "status": "ok",
+      "command": "bru --version",
+      "exitCode": 0,
+      "durationMs": 1215,
+      "version": "4.1.0",
+      "detail": "4.1.0",
+      "raw": "4.1.0\n"
+    },
+    {
+      "id": "container-runtime",
+      "tier": "on-demand",
+      "status": "missing",
+      "command": "podman --version",
+      "exitCode": 1,
+      "durationMs": 26,
+      "version": null,
+      "detail": "'podman' is not recognized as an internal or external command,\r",
+      "raw": "\n'podman' is not recognized as an internal or external command,\r\noperable program or batch file."
+    },
+    {
+      "id": "crawl4ai",
+      "tier": "on-demand",
+      "status": "missing",
+      "command": "crawl4ai-doctor",
+      "exitCode": 1,
+      "durationMs": 25,
+      "version": null,
+      "detail": "'crawl4ai-doctor' is not recognized as an internal or external command,\r",
+      "raw": "\n'crawl4ai-doctor' is not recognized as an internal or external command,\r\noperable program or batch file."
+    },
+    {
+      "id": "jina-reader",
+      "tier": "on-demand",
+      "status": "not-applicable",
+      "command": null,
+      "version": null,
+      "exitCode": null,
+      "durationMs": 0,
+      "detail": "nothing to install locally; verified by calling the API with a credential",
+      "raw": ""
+    },
+    {
+      "id": "sentry-or-opentelemetry",
+      "tier": "recommended-for-production",
+      "status": "not-applicable",
+      "command": null,
+      "version": null,
+      "exitCode": null,
+      "durationMs": 0,
+      "detail": "depends on the observability stack each project selects",
+      "raw": ""
+    }
+  ]
+}

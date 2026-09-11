@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tool report - kit toolchain</title>
+<style>
+  :root { color-scheme: light dark; --line: #d9dee5; --muted: #5b6673; --ok: #0f8a4d; --warn: #b26a00; --bad: #c0392b; --na: #6b7280; }
+  * { box-sizing: border-box; }
+  body { margin: 0 auto; max-width: 1100px; padding: 28px 20px 60px; font: 15px/1.6 ui-sans-serif, system-ui, "Segoe UI", sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .meta code { background: rgba(127,127,127,.14); padding: 1px 5px; border-radius: 4px; }
+  .cards { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; min-width: 130px; }
+  .card strong { display: block; font-size: 22px; }
+  .card span { color: var(--muted); font-size: 12px; }
+  .card.ok strong { color: var(--ok); } .card.error strong, .card.timeout strong { color: var(--bad); }
+  .card.missing strong { color: var(--warn); } .card.not-applicable strong { color: var(--na); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  tr.detail td { border-bottom: 1px solid var(--line); padding-top: 0; }
+  td.id { font-weight: 600; } td.version { font-variant-numeric: tabular-nums; } td.ms { color: var(--muted); }
+  td.tier { color: var(--muted); font-size: 12px; }
+  code { font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .badge { display: inline-block; font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+  .badge.ok { color: var(--ok); } .badge.missing { color: var(--warn); } .badge.error, .badge.timeout { color: var(--bad); } .badge.not-applicable { color: var(--na); }
+  details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+  pre { margin: 8px 0 14px; padding: 12px; border-radius: 8px; background: rgba(127,127,127,.12); overflow: auto; max-height: 320px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+  <h1>Tool report</h1>
+  <p class="meta">
+    19 tools probed in 7.8s ·
+    generated <code>2026-09-11T02:59:33.054Z</code> ·
+    host <code>win32 10.0.26100 x64</code> ·
+    node <code>v24.19.0</code> ·
+    probe cwd <code>../apps/web</code> ·
+    timeout <code>8000ms</code> ·
+    offline probing (npx --no-install)
+  </p>
+  <div class="cards">
+      <div class="card ok"><strong>12</strong><span>ยืนยันแล้ว</span></div>
+      <div class="card missing"><strong>5</strong><span>ไม่พบบนเครื่องนี้</span></div>
+      <div class="card not-applicable"><strong>2</strong><span>ตรวจอัตโนมัติไม่ได้</span></div>
+  </div>
+  <table>
+    <thead><tr><th>Tool</th><th>Tier</th><th>Status</th><th>Version</th><th>Command</th><th>Time</th></tr></thead>
+    <tbody>
+    <tr>
+      <td class="id">git</td>
+      <td class="tier">required</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">2.52.0.windows.1</td>
+      <td class="cmd"><code>git --version</code></td>
+      <td class="ms">42ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>git version 2.52.0.windows.1
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">node</td>
+      <td class="tier">required</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">24.19.0</td>
+      <td class="cmd"><code>node --version</code></td>
+      <td class="ms">44ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>v24.19.0
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">npm</td>
+      <td class="tier">required</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">11.17.0</td>
+      <td class="cmd"><code>npm --version</code></td>
+      <td class="ms">257ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>11.17.0
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">pnpm</td>
+      <td class="tier">optional</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">11.24.0</td>
+      <td class="cmd"><code>pnpm --version</code></td>
+      <td class="ms">408ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>11.24.0
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">yarn</td>
+      <td class="tier">optional</td>
+      <td><span class="badge missing">-- missing</span></td>
+      <td class="version"></td>
+      <td class="cmd"><code>yarn --version</code></td>
+      <td class="ms">27ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>
+'yarn' is not recognized as an internal or external command,
+operable program or batch file.</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">bun</td>
+      <td class="tier">optional</td>
+      <td><span class="badge missing">-- missing</span></td>
+      <td class="version"></td>
+      <td class="cmd"><code>bun --version</code></td>
+      <td class="ms">25ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>
+'bun' is not recognized as an internal or external command,
+operable program or batch file.</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">rtk</td>
+      <td class="tier">recommended</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">0.48.0</td>
+      <td class="cmd"><code>rtk --version</code></td>
+      <td class="ms">41ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>rtk 0.48.0
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">gh</td>
+      <td class="tier">recommended-for-github-workflow</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">2.86.0</td>
+      <td class="cmd"><code>gh --version</code></td>
+      <td class="ms">71ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>gh version 2.86.0 (2026-01-21)
+https://github.com/cli/cli/releases/tag/v2.86.0
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">python</td>
+      <td class="tier">on-demand</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">3.14.2</td>
+      <td class="cmd"><code>python --version</code></td>
+      <td class="ms">35ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>Python 3.14.2
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">playwright</td>
+      <td class="tier">recommended-for-user-facing-web</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">1.63.0</td>
+      <td class="cmd"><code>npx --no-install playwright --version</code></td>
+      <td class="ms">1198ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>Version 1.63.0
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">axe-playwright</td>
+      <td class="tier">recommended-with-playwright-for-user-facing-web</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version"></td>
+      <td class="cmd"><code>node -e "require.resolve('@axe-core/playwright')"</code></td>
+      <td class="ms">65ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">knip</td>
+      <td class="tier">recommended-for-js-ts-code-health</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">6.35.1</td>
+      <td class="cmd"><code>npx --no-install knip --version</code></td>
+      <td class="ms">1260ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>6.35.1
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">lefthook</td>
+      <td class="tier">optional-local-quality-guard</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">2.1.12</td>
+      <td class="cmd"><code>npx --no-install lefthook version</code></td>
+      <td class="ms">831ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>2.1.12
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">repomix</td>
+      <td class="tier">on-demand</td>
+      <td><span class="badge missing">-- missing</span></td>
+      <td class="version"></td>
+      <td class="cmd"><code>npx --no-install repomix --version</code></td>
+      <td class="ms">2214ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>
+npm error npx canceled due to missing packages and no YES option: ["repomix@1.18.0"]
+npm error A complete log of this run can be found in: C:\Users\LoliR\AppData\Local\npm-cache\_logs\2026-09-11T02_59_29_773Z-debug-0.log</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">bruno</td>
+      <td class="tier">recommended-for-api-work</td>
+      <td><span class="badge ok">OK ok</span></td>
+      <td class="version">4.1.0</td>
+      <td class="cmd"><code>bru --version</code></td>
+      <td class="ms">1215ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>4.1.0
+</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">container-runtime</td>
+      <td class="tier">on-demand</td>
+      <td><span class="badge missing">-- missing</span></td>
+      <td class="version"></td>
+      <td class="cmd"><code>podman --version</code></td>
+      <td class="ms">26ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>
+'podman' is not recognized as an internal or external command,
+operable program or batch file.</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">crawl4ai</td>
+      <td class="tier">on-demand</td>
+      <td><span class="badge missing">-- missing</span></td>
+      <td class="version"></td>
+      <td class="cmd"><code>crawl4ai-doctor</code></td>
+      <td class="ms">25ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>
+'crawl4ai-doctor' is not recognized as an internal or external command,
+operable program or batch file.</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">jina-reader</td>
+      <td class="tier">on-demand</td>
+      <td><span class="badge not-applicable">NA not-applicable</span></td>
+      <td class="version"></td>
+      <td class="cmd"><code>—</code></td>
+      <td class="ms">0ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>nothing to install locally; verified by calling the API with a credential</pre></details></td>
+    </tr>
+    <tr>
+      <td class="id">sentry-or-opentelemetry</td>
+      <td class="tier">recommended-for-production</td>
+      <td><span class="badge not-applicable">NA not-applicable</span></td>
+      <td class="version"></td>
+      <td class="cmd"><code>—</code></td>
+      <td class="ms">0ms</td>
+    </tr>
+    <tr class="detail">
+      <td colspan="6"><details><summary>รายละเอียด / output ที่ได้</summary><pre>depends on the observability stack each project selects</pre></details></td>
+    </tr>
+    </tbody>
+  </table>
+  <p class="meta">Status หมายถึงผลบนเครื่องที่รันเท่านั้น — "ไม่พบบนเครื่องนี้" ไม่ได้แปลว่าเครื่องมือไม่ดี และ "ตรวจอัตโนมัติไม่ได้" คือต้องมี credential/network หรือเป็นตัวเลือกของโปรเจกต์</p>
+</body>
+</html>

@@ -10,6 +10,11 @@
  * Usage:
  *   node scripts/tool-report.mjs [--cwd <dir>] [--out <dir>] [--timeout <ms>]
  *                                [--tool <id>]... [--json] [--quiet] [--allow-install]
+ *                                [--snapshot]
+ *
+ * --snapshot regenerates the report into docs/tool-report/ (committed) and splices the Markdown
+ * table into README.md between tool-report markers, so a scheduled run (cron/CI) refreshes the
+ * published table without hand editing. It stages nothing and commits nothing by itself.
  *
  * Probing is offline by default: `npx <pkg>` is rewritten to `npx --no-install <pkg>` so a report
  * never silently downloads a package. Pass --allow-install to probe with network instead.
@@ -53,6 +58,7 @@ function parseArgs(argv) {
     json: false,
     quiet: false,
     allowInstall: false,
+    snapshot: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
@@ -63,6 +69,7 @@ function parseArgs(argv) {
     else if (flag === '--json') args.json = true;
     else if (flag === '--quiet') args.quiet = true;
     else if (flag === '--allow-install') args.allowInstall = true;
+    else if (flag === '--snapshot') args.snapshot = true;
     else throw new Error(`unknown flag: ${flag}`);
   }
   return args;
@@ -191,6 +198,34 @@ writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 writeFileSync(mdPath, renderMarkdown(report), 'utf8');
 writeFileSync(htmlPath, renderHtml(report), 'utf8');
 
+const MARKERS = {
+  start: '<!-- tool-report:start (generated; edit outside this block) -->',
+  end: '<!-- tool-report:end -->',
+};
+
+function snapshotIntoReadme() {
+  const readmePath = path.join(kitRoot, 'README.md');
+  const readme = readFileSync(readmePath, 'utf8');
+  const startIndex = readme.indexOf(MARKERS.start);
+  const endIndex = readme.indexOf(MARKERS.end);
+  if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
+    throw new Error(`README.md is missing both tool-report markers:\n${MARKERS.start}\n${MARKERS.end}`);
+  }
+  const table = renderMarkdown(report).replace(/^<!--.*-->$/m, '').trim();
+  const next = `${readme.slice(0, startIndex + MARKERS.start.length)}\n\n_${report.tools.length} tools probed ${report.generatedAt} on ${report.host.platform}, probe cwd \`${report.probeCwd}\` (${report.host.shell})._\n\n${table}\n\n${readme.slice(endIndex)}`;
+  writeFileSync(readmePath, next, 'utf8');
+
+  const committedDir = path.join(kitRoot, 'docs', 'tool-report');
+  mkdirSync(committedDir, { recursive: true });
+  writeFileSync(path.join(committedDir, 'tool-report.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+  writeFileSync(path.join(committedDir, 'tool-report.md'), renderMarkdown(report), 'utf8');
+  writeFileSync(path.join(committedDir, 'tool-report.html'), renderHtml(report), 'utf8');
+  return { readme: relative(readmePath), committedDir: relative(committedDir) };
+}
+
+let snapshot = null;
+if (args.snapshot) snapshot = snapshotIntoReadme();
+
 function renderMarkdown(data) {
   const box = (value) => (value ? `\`${value}\`` : '—');
   const verified = data.tools.filter((tool) => tool.status === 'ok');
@@ -296,7 +331,7 @@ ${rows}
 }
 
 if (args.json) {
-  console.log(JSON.stringify({ counts, elapsedMs, reports: { json: relative(jsonPath), md: relative(mdPath), html: relative(htmlPath) } }));
+  console.log(JSON.stringify({ counts, elapsedMs, snapshot, reports: { json: relative(jsonPath), md: relative(mdPath), html: relative(htmlPath) } }));
 } else if (!args.quiet) {
   const width = Math.max(...results.map((result) => result.id.length));
   console.log(`tool-report · ${results.length} tools · probe cwd: ${relative(args.cwd)} · ${report.host.shell}`);
@@ -308,6 +343,7 @@ if (args.json) {
   const summary = Object.entries(counts).map(([status, count]) => `${status} ${count}`).join(' · ');
   console.log(`summary: ${summary} (${(elapsedMs / 1000).toFixed(1)}s)`);
   console.log(`reports: ${relative(jsonPath)} · ${relative(mdPath)} · ${relative(htmlPath)}`);
+  if (snapshot) console.log(`snapshot: ${snapshot.readme} updated · ${snapshot.committedDir}/ refreshed (nothing staged or committed)`);
 }
 
 process.exit(counts.error || counts.timeout ? 1 : 0);
