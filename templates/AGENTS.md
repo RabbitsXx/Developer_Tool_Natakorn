@@ -13,12 +13,16 @@ At the start of a session, read `.ai-kit/project.json` when present, then `START
 - Test: `<!-- command -->`
 - Build: `<!-- command -->`
 
-## UI/UX skill activation
+## Skill pack activation
 
-- For user-facing UI/UX work, read `.ai-kit/skills/ui-ux/README.md` when present and load only the smallest skill subset mapped to the task.
-- Do not load UI/UX skills for backend/database/infrastructure-only tasks.
+- Packs live at `.ai-kit/skills/<pack>/SKILL.md` (open Agent Skills format). Read only the pack that matches the task, then only the references it maps to.
+- UI work: `.ai-kit/skills/ui-ux/SKILL.md` for user-facing routes and flows. Do not load it for backend/database/infrastructure-only tasks.
+- API work: `.ai-kit/skills/api/SKILL.md` for endpoints, request/response contracts, authorization boundaries, and API tests.
+- Data work: `.ai-kit/skills/data-layer/SKILL.md` for schema, migration, query, and data-access changes.
+- Test work: `.ai-kit/skills/testing/SKILL.md` for test selection, regression tests, and what CI should gate.
+- Release work: `.ai-kit/skills/release/SKILL.md` for deploy preflight, execution, rollback planning, and post-release verification; production deployment requires explicit authorization.
 - Reuse the existing design system first; do not add a second component library without a requirement.
-- Build success is not visual acceptance. Verify the actual route in a browser; use Playwright and accessibility checks when configured.
+- Build success is not visual acceptance, and passing unit tests is not API verification. Verify the actual route in a browser; use Playwright and accessibility checks when configured.
 
 ## Context budget
 

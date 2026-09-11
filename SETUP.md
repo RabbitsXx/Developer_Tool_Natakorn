@@ -27,10 +27,14 @@
 - Start local dependencies only when required; bind development services to localhost.
 - Apply migrations only to the explicitly selected local/test environment.
 
-## UI/UX activation
+## Skill pack activation
 
-- For user-facing page, flow, responsive, or visual work, read `.ai-kit/skills/ui-ux/README.md` when present and load only the mapped subset.
-- Do not load UI/UX skills for backend-only work.
+- Packs live at `.ai-kit/skills/<pack>/SKILL.md` in the open Agent Skills format. Read only the pack that matches the task, then only the references it maps to.
+- UI work: read `.ai-kit/skills/ui-ux/SKILL.md` for user-facing page, flow, responsive, or visual work; do not load it for backend-only tasks.
+- API work: read `.ai-kit/skills/api/SKILL.md` for endpoints, route handlers, request/response contracts, authorization boundaries, or API tests.
+- Data work: read `.ai-kit/skills/data-layer/SKILL.md` for schema, migration, query, index, tenant-scoping, or data-access changes.
+- Test work: read `.ai-kit/skills/testing/SKILL.md` when choosing test levels, adding or repairing tests, fixing a bug that must not return, or deciding CI gates.
+- Release work: read `.ai-kit/skills/release/SKILL.md` when preparing or executing a deploy, planning rollback, or verifying a release; production deployment requires explicit authorization.
 - For substantial UI work, define user goal, task flow, hierarchy, design-system constraints, responsive behavior, and visual/browser QA before implementation is considered complete.
 - If Playwright is selected, add repeatable browser checks; if `@axe-core/playwright` is selected, include accessibility scanning. Use Knip after substantial JS/TS churn and Lefthook only as a fast local guard.
 
@@ -57,7 +61,7 @@
 - For repeatable critical user journeys, prefer project-local Playwright when configured; a production build alone does not prove UI behavior.
 - For production projects, verify the selected observability path can surface meaningful runtime failures without logging secrets or unnecessary personal data.
 - Review `git diff` and confirm only intended files changed.
-- When the task changes this kit itself (templates, `toolchain.json`, or bootstrap scripts), run `node scripts/validate-kit.mjs` and `node scripts/verify-bootstrap-protocol.mjs` and require `ok: true` before handoff.
+- When the task changes this kit itself (templates, `toolchain.json`, or bootstrap scripts), run `node scripts/validate-kit.mjs` and `node scripts/verify-bootstrap-protocol.mjs` and require `ok: true` before handoff. If `toolchain.json` `skills.packs` changed, run `node scripts/sync-skill-docs.mjs` first so the generated pack tables in `README.md` and `docs/INSTALLATION.md` match the manifest.
 
 ## 6. Ship
 
@@ -72,4 +76,4 @@ For a new Next.js project, prefer TypeScript, App Router, a linter, Tailwind whe
 
 Recommended script names are `dev`, `build`, `start`, `lint`, `typecheck`, `test`, and `format`; add `test:e2e` when Playwright or another browser suite is selected. Existing projects keep their established names.
 
-See `docs/BOOTSTRAP_PROTOCOL.md` for project entry/resume rules, `docs/CONTEXT_EFFICIENCY.md` for context-budget rules, `.ai-kit/skills/ui-ux/README.md` for task-scoped UI skills after bootstrap, and `docs/QUALITY_AND_PRODUCTION.md` for Playwright, accessibility, Knip, Lefthook, optional CI, and observability guidance.
+See `docs/BOOTSTRAP_PROTOCOL.md` for project entry/resume rules, `docs/CONTEXT_EFFICIENCY.md` for context-budget rules, `.ai-kit/skills/<pack>/SKILL.md` for task-scoped UI/API skills after bootstrap, and `docs/QUALITY_AND_PRODUCTION.md` for Playwright, accessibility, Knip, Lefthook, optional CI, and observability guidance.

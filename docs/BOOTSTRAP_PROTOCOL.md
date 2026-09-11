@@ -80,7 +80,7 @@ Never use `--accept-drift` simply to silence a warning.
 `bootstrap-project.ps1` and `bootstrap-project.sh` perform two jobs:
 
 1. Add missing AI-project instruction files without overwriting existing project files.
-2. Copy the instruction-only UI/UX skill pack to `.ai-kit/skills/ui-ux` without overwriting project-local edits.
+2. Synchronize every Agent Skills pack registered in `toolchain.json` (`ui-ux`, `api`, `data-layer`, `testing`, `release`) into `.ai-kit/skills/<pack>` without overwriting project-local edits, using the manifest-driven sync script.
 3. Run the safe project detector to establish `.ai-kit/project.json`.
 
 The bootstrap process intentionally does **not** install Playwright, `@axe-core/playwright`, Knip, Lefthook, Supabase, Neon, Drizzle, Prisma, Docker, Inngest, observability, CI, or any other optional dependency. Skills are text instructions only; package installation remains project-specific.
@@ -102,7 +102,7 @@ docs/run.md + repository docs
     ↓
 Targeted code discovery
     ↓
-If UI task: .ai-kit/skills/ui-ux/README.md → smallest mapped skill subset
+If a task matches a pack (ui-ux, api, data-layer, testing, release): .ai-kit/skills/<pack>/SKILL.md → only the references/ the task maps to
     ↓
 Actual task
 ```

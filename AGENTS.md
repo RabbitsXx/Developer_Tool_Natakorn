@@ -27,13 +27,19 @@ Read `docs/BOOTSTRAP_PROTOCOL.md` before changing bootstrap/state behavior. A va
 - Delegated agents receive one goal, explicit scope, acceptance criteria, known entry points, invariants, and required verification — not the full repository or conversation by default.
 - Read `docs/CONTEXT_EFFICIENCY.md` when changing agent/context behavior.
 
-## UI/UX skill activation
+## Skill pack activation
 
-- For user-facing UI/UX tasks, read `.ai-kit/skills/ui-ux/README.md` when present and load only the smallest skill subset mapped to the task.
-- Do not load the UI/UX pack for backend, database, infrastructure, or documentation-only work.
+Skill packs live in `.ai-kit/skills/<pack>/SKILL.md` and follow the open Agent Skills format. Read only the pack that matches the task, then open only the reference files that pack maps to.
+
+- `ui-ux` — for user-facing page, flow, component-system, responsive, or visual work. Read `.ai-kit/skills/ui-ux/SKILL.md` when present.
+- `api` — for endpoints, route handlers, request/response contracts, error shapes, authorization boundaries, or API tests. Read `.ai-kit/skills/api/SKILL.md` when present.
+- `data-layer` — for schema, migration, query, index, tenant-scoping, or data-access work. Read `.ai-kit/skills/data-layer/SKILL.md` when present.
+- `testing` — for choosing what to verify, adding or repairing tests, turning a fixed bug into a regression test, or deciding what CI gates. Read `.ai-kit/skills/testing/SKILL.md` when present.
+- `release` — for deploying, promoting a build, release preflight, rollback planning, or post-release verification. Read `.ai-kit/skills/release/SKILL.md` when present; production deployment still requires explicit user authorization.
+- Do not load a pack for work it does not cover: no `ui-ux` for backend, database, infrastructure, or documentation-only tasks; no `api` for pure UI work; no `data-layer` for tasks that do not change stored data; no `release` for feature work that has not reached a release decision.
 - Substantial UI work must establish user goal, task flow, hierarchy, responsive behavior, and browser/visual QA before it is considered complete.
 - Reuse the project's existing design system/components before adding another UI library.
-- Build success is not visual acceptance. Verify changed routes in a real browser; use Playwright and `@axe-core/playwright` when configured.
+- Build success is not visual acceptance, and passing unit tests is not API or data verification. Verify changed routes in a real browser (Playwright and `@axe-core/playwright` when configured), exercise changed endpoints with real requests including a failure path and an authorization-negative case, and apply data changes to a local or explicitly authorized database with the rollback path and constraints checked.
 
 ## Tool-selection rules
 

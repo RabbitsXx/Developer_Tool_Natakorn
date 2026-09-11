@@ -89,7 +89,7 @@ CONTEXT:
 - Use RTK for supported terminal commands when available; rerun only failing commands raw when compressed output hides diagnostics.
 
 OPTIONAL — enable only when justified:
-- UI/UX Skill Pack: load from `.ai-kit/skills/ui-ux/README.md` only for user-facing UI/UX work; then load the smallest applicable subset, never all skills by default
+- Skill packs (open Agent Skills format): `ui-ux` at `.ai-kit/skills/ui-ux/SKILL.md` for user-facing UI work, `api` at `.ai-kit/skills/api/SKILL.md` for endpoint/contract work, `data-layer` at `.ai-kit/skills/data-layer/SKILL.md` for schema/migration/query work, `testing` at `.ai-kit/skills/testing/SKILL.md` for test strategy and regression work, `release` at `.ai-kit/skills/release/SKILL.md` for deploy and rollback work; read SKILL.md first, then open only the reference files mapped to the task, never a whole pack by default
 - Playwright: repeatable browser/E2E verification for interactive web flows
 - `@axe-core/playwright`: accessibility checks when Playwright is already selected for a user-facing web project
 - Knip: JS/TS code-health checks for unused files, exports, and dependencies when the project is mature enough for cleanup
@@ -103,18 +103,51 @@ OPTIONAL — enable only when justified:
 - Sentry/OpenTelemetry: production observability
 - GitHub Actions: remote CI when shared/production verification is useful
 
-## UI/UX task activation
+## Skill pack activation
+
+Skill packs use the open Agent Skills format. Activate one only when the task matches it.
 
 When the user's request changes a user-facing page, flow, component system, responsive behavior, or visual quality:
 
-1. Read `.ai-kit/skills/ui-ux/README.md` if present.
+1. Read `.ai-kit/skills/ui-ux/SKILL.md` if present.
 2. Load only the skill files mapped to the task type.
 3. For a substantial new page/redesign, do not jump directly to JSX/CSS. Establish user goal, task flow, hierarchy, design-system constraints, responsive behavior, and QA plan first.
 4. Reuse the project's existing component/design system before adding another one.
 5. Do not declare UI complete from lint/typecheck/build alone. Verify the real route in a browser; use Playwright when configured and accessibility checks when available.
 6. Treat screenshot/visual inspection as evidence for layout quality, not as decoration.
 
-For non-UI tasks, do not load this skill pack.
+When the request adds or changes an endpoint, route handler, request/response contract, error shape, or API test:
+
+1. Read `.ai-kit/skills/api/SKILL.md` if present.
+2. Open only the reference files mapped to the task type.
+3. Decide status codes and the shared error envelope before writing handler code.
+4. Never trust client-supplied identity, tenant, role, or computed values; authorize the specific resource.
+5. Do not accept unit tests alone as verification. Exercise the changed endpoints with real requests, including a failure path and an authorization-negative case.
+
+When the request adds or changes a table, column, relation, index, constraint, migration, backfill, or query:
+
+1. Read `.ai-kit/skills/data-layer/SKILL.md` if present.
+2. Open only the reference files mapped to the task type.
+3. Keep the project's existing database provider and access layer; do not switch providers or ORMs.
+4. Never run a destructive migration against a linked remote database unless the user explicitly names the environment and authorizes it.
+5. Do not accept a passing build or unit suite as verification. Apply the change to a local or explicitly authorized database, check the rollback path, and verify the constraint or isolation behavior that changed with a negative case.
+
+When the request adds or changes tests, or fixes a bug that must not return:
+
+1. Read `.ai-kit/skills/testing/SKILL.md` if present.
+2. Choose the lowest level that can still catch the failure; keep browser journeys few and real.
+3. Write the regression test so it fails on the old behavior before the fix, and name it after the failure it prevents.
+4. Never report a suite as passing without running it and reading the output; record skipped checks and the reason.
+
+When the request deploys, promotes a build, or verifies a release:
+
+1. Read `.ai-kit/skills/release/SKILL.md` if present.
+2. Complete preflight before anything moves: commit identity, verification ladder, migration state, configuration for the named environment.
+3. Decide rollback triggers and the procedure before deploying.
+4. Never deploy production, change cloud configuration, or rotate secrets unless the user explicitly names the target and authorizes it; without authorization, stop after preflight and say so.
+5. Confirm health on real traffic with the release identity attached, and close the release with post-release verification and owned follow-ups.
+
+For tasks matching no pack, do not load a pack.
 
 ## Security
 

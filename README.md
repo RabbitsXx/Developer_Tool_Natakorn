@@ -58,7 +58,25 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
 | UI | Tailwind CSS + shadcn/ui | ใช้เมื่อเหมาะกับโปรเจกต์ ไม่ใช่ข้อบังคับ |
 | Database | Neon / Supabase / PostgreSQL provider อื่น | เลือกจาก requirement จริง ไม่ล็อก provider กลาง |
 | Database access | Drizzle / Prisma / `pg` / provider SDK | รักษา access layer เดิมก่อนสร้างใหม่ |
-| UI/UX skills | `.ai-kit/skills/ui-ux` | โหลดเฉพาะงาน UI เพื่อบังคับ UX flow, design system, responsive และ visual QA |
+| Agent Skills packs | `.ai-kit/skills/<pack>/SKILL.md` + `references/` | สกิล portable ตามสเปกเปิด Agent Skills; โหลดทีละ pack และเปิด reference เฉพาะที่งานต้องใช้ (ตาราง pack ด้านล่างสร้างจาก manifest) |
+
+### Skill packs ที่ลงทะเบียน
+
+รายการ pack ทั้งหมดอยู่ใน `toolchain.json` ที่ `skills.packs` — เพิ่ม pack ที่นั่นแล้วตารางนี้จะอัปเดตตาม (ห้ามแก้ในบล็อก generated)
+
+<!-- skill-packs:start (generated from toolchain.json; run: node scripts/sync-skill-docs.mjs) -->
+
+_5 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.packs`; ทุก pack มี `SKILL.md` + `references/` ตามรูปแบบ Agent Skills_
+
+| Pack | ใช้เมื่อ | แนะนำเมื่อโปรเจกต์มี |
+|---|---|---|
+| `ui-ux` → `.ai-kit/skills/ui-ux/SKILL.md` | งาน UI ที่ผู้ใช้เห็น: หน้า, flow, ระบบคอมโพเนนต์, responsive และ visual QA | `web-framework` |
+| `api` → `.ai-kit/skills/api/SKILL.md` | งาน HTTP endpoint/route handler, สัญญา request/response, error shape, ขอบเขต authz และ API test | `http-api` |
+| `data-layer` → `.ai-kit/skills/data-layer/SKILL.md` | งาน schema/constraint, ความปลอดภัยของ migration, query และ index, tenant scoping, การตรวจข้อมูล | `database` |
+| `testing` → `.ai-kit/skills/testing/SKILL.md` | การเลือกสิ่งที่จะตรวจสอบ, ระดับของ test, browser journey, flakiness และ test data, regression test | `web-framework`, `http-api` |
+| `release` → `.ai-kit/skills/release/SKILL.md` | การวางแผนและ execute release อย่างปลอดภัย: preflight, deploy, rollback, observability หลัง release และการยืนยันหลังปล่อยจริง | `web-framework` |
+
+<!-- skill-packs:end -->
 | Browser E2E | Playwright | ตรวจ critical user journeys ที่ build อย่างเดียวพิสูจน์ไม่ได้ |
 | Accessibility | `@axe-core/playwright` | ตรวจ issue ที่ automate ได้เมื่อโปรเจกต์ใช้ Playwright |
 | Code health | Knip | หา unused files/exports/dependencies หลัง AI แก้หลายรอบ |
@@ -98,11 +116,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
 │   ├── project-state.mjs     # detector/state contract ที่ไม่อ่าน secret .env
 │   ├── bootstrap-project.ps1 # ลง template + state ในโปรเจกต์ Windows
 │   ├── bootstrap-project.sh  # ลง template + state ในโปรเจกต์ macOS/Linux
-│   ├── validate-kit.mjs      # ตรวจไฟล์บังคับ + manifest contract ของ kit
+│   ├── sync-skills.mjs       # copy ทุก Agent Skills pack ที่ลงทะเบียนใน toolchain.json
+│   ├── sync-skill-docs.mjs   # generate ตาราง pack ใน README/INSTALLATION จาก manifest (--check สำหรับ gate)
+│   ├── new-skill.mjs         # scaffold pack ใหม่: สร้าง SKILL.md + references + ลงทะเบียนใน toolchain.json
+│   ├── validate-kit.mjs      # ตรวจไฟล์บังคับ + manifest + สเปก SKILL.md ของทุก pack
 │   ├── verify-bootstrap-protocol.mjs # ทดสอบ NEW/EXISTING/RESUME + drift + secret isolation
 │   └── tool-report.mjs       # probe ทุก tool ใน toolchain.json → JSON + Markdown + HTML
-├── skills/
-│   └── ui-ux/                # instruction-only skill pack (bootstrap ไปที่ .ai-kit/skills/ui-ux)
+├── skills/                   # <pack>/SKILL.md + references/ ต่อ pack ตามสเปก Agent Skills
+│                             # รายการ pack จริง = toolchain.json skills.packs (ตารางด้านบน generate จาก manifest)
 └── templates/                # ไฟล์ตั้งต้นที่ bootstrap นำไปใช้
     └── optional/             # Playwright/CI starters เลือก copy เอง ไม่ bootstrap อัตโนมัติ
 ```
@@ -112,7 +133,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
 หลังแก้ไฟล์ใน kit (templates, manifest หรือ bootstrap scripts) ให้รัน self-check ทั้งสองตัวก่อน commit:
 
 ```bash
-node scripts/validate-kit.mjs               # ไฟล์บังคับ 28 ไฟล์ + toolchain contract
+node scripts/validate-kit.mjs               # ไฟล์บังคับ 25 ไฟล์ + toolchain contract + สเปก SKILL.md ของทุก pack + ตาราง docs ตรงกับ manifest
+node scripts/sync-skills.mjs --target <project>  # copy ทุก pack ตาม toolchain.json (ไม่ทับไฟล์เดิม)
+node scripts/sync-skill-docs.mjs            # sync ตาราง pack ใน README/INSTALLATION จาก manifest (--check เพื่อ fail เมื่อเพี้ยน)
+node scripts/new-skill.mjs --id <name> --summary "..." --summary-th "..."   # scaffold pack ใหม่แบบคำสั่งเดียว (--dry-run เพื่อพรีวิว)
 node scripts/verify-bootstrap-protocol.mjs  # NEW / EXISTING / RESUME + drift + secret isolation
 ```
 
@@ -239,9 +263,14 @@ _19 tools probed 2026-09-11T02:59:33.054Z on win32 10.0.26100, probe cwd `../app
 | `setup-project.mjs` | โฟลเดอร์ว่าง | โหมด `NEW_PROJECT`, เขียน `.ai-kit/project.json`, `pendingDecisions: [product_requirements_before_stack_selection]`, safety flags ทั้ง 4 เป็น `false` |
 | `setup-project.mjs --dry-run` | โฟลเดอร์ว่างอีกอัน | `dryRun: true`, `stateFile: null` และไม่มีการสร้าง `.ai-kit/` |
 | `setup-project.mjs` + drift | เติม `package.json` (`next`) แล้วรันซ้ำ | `framework: nextjs`, `driftDetected: true` → `--accept-drift` แล้วเป็น `false` และรันซ้ำยังคง `false` |
-| `bootstrap-project.ps1` | ลงโปรเจกต์ใหม่ | สร้าง `START_PROMPT.md`, `AGENTS.md`, `PROJECT_CONTEXT.md`, `docs/`, `.ai-kit/project.json` (1,568 bytes), `.ai-kit/skills/ui-ux/` 6 ไฟล์ |
-| `bootstrap-project.ps1` (รันซ้ำ) | หลังเติมบรรทัดใน `AGENTS.md` | ข้ามไฟล์เดิม 15 ครั้ง และข้อความ local edit ยังอยู่ (`grep -c` = 1) |
-| `bootstrap-project.sh` | ลงโปรเจกต์ใหม่ | ไฟล์ชุดเดียวกับฝั่ง PowerShell, skill pack 6 ไฟล์, ตัวตรวจจับต่อได้เป็น `RESUME_CONFIGURED_PROJECT` |
+| `bootstrap-project.ps1` | ลงโปรเจกต์ใหม่ | สร้าง `START_PROMPT.md`, `AGENTS.md`, `PROJECT_CONTEXT.md`, `docs/`, `.ai-kit/project.json` (1,819 bytes), skill 4 pack รวม 24 ไฟล์ใต้ `.ai-kit/skills/` (SKILL.md + `references/` 5 ไฟล์ต่อ pack) |
+| `bootstrap-project.ps1` (รันซ้ำ) | หลังเติมบรรทัดใน `AGENTS.md` และใน `.ai-kit/skills/ui-ux/SKILL.md` | ข้ามเทมเพลตเดิม 9 ครั้ง, sync รายงาน `skipped: 6` ต่อ pack และข้อความ local edit ของทั้งสองไฟล์ยังอยู่ (`grep -c` = 1) |
+| `sync-skills.mjs --dry-run` | โฟลเดอร์ว่าง | `ok: true`, `dryRun: true`, 4 pack รวม 24 ไฟล์เป็น `added` โดยยังไม่เขียนลงดิสก์ |
+| `sync-skill-docs.mjs --check` | แก้ `summary` ของ pack ใน manifest (บนสำเนาชั่วคราวของ kit) | `ok: false` + `docs/INSTALLATION.md: out of date` และ exit 1; `validate-kit.mjs` ก็ fail พร้อมข้อความให้รัน `sync-skill-docs.mjs` |
+| เพิ่ม pack ที่สาม (`data-layer`) | เขียน `skills/data-layer/` + ลงทะเบียนใน `toolchain.json` | `bootstrap-project.sh/.ps1` ไม่มีคำว่า `data-layer` เลย แต่ bootstrap ลง 18 ไฟล์ และ detector รายงาน `data-layer-skill-pack` |
+| เพิ่ม pack ที่สี่ (`testing`) โดยใช้ tag เดิม (`web-framework`, `http-api`) | เขียน `skills/testing/` + ลงทะเบียนใน `toolchain.json` เท่านั้น | sha256 ของ `scripts/*` ทั้ง 11 ไฟล์เท่าเดิมก่อน/หลัง, `grep -c testing scripts/*` = 0 ทุกไฟล์, bootstrap ลง 24 ไฟล์ และ detector รายงาน 4 capability |
+| scaffold pack ที่ห้า (`release-hotfix`, บนสำเนาชั่วคราวของ kit) | `node scripts/new-skill.mjs --id release-hotfix ...` คำสั่งเดียว | diff ของ `toolchain.json` = บล็อก pack เดียว, validate `ok: true` + `skillPacksPendingContent: [release-hotfix]`, bootstrap ลง 28 ไฟล์ 5 pack, `--dry-run`/tag ผิด/id ซ้ำ ทำงานถูกต้อง |
+| `bootstrap-project.sh` | ลงโปรเจกต์ใหม่ | ไฟล์ชุดเดียวกับฝั่ง PowerShell, skill 4 pack รวม 24 ไฟล์, ตัวตรวจจับต่อได้เป็น `RESUME_CONFIGURED_PROJECT` และรายงาน capability ครบทั้ง 4 pack |
 | `lefthook.yml` guard | `lefthook install` + commit จริง | บล็อก commit ที่แตะ kit contract ได้จริง (ดูแถว 12 ในตาราง A) |
 
 ผลชุดนี้เป็นของ Windows เท่านั้น — รอบนี้ยังไม่มีหลักฐานบน macOS/Linux
@@ -257,7 +286,7 @@ _19 tools probed 2026-09-11T02:59:33.054Z on win32 10.0.26100, probe cwd `../app
 - Database/provider/ORM เป็น project decision; migration history ต้องสะท้อน behavior ที่ deploy ได้จริงเมื่อ architecture ใช้ migrations
 - ทุกงานต้องมี lint/typecheck/test/build ตามที่โปรเจกต์รองรับ และทดสอบ UI จริงเมื่อเปลี่ยน behavior; critical browser journeys ใช้ Playwright เมื่อ configure ไว้
 - CI และ observability เป็น optional capability ไม่ใช่ dependency ที่ต้องยัดทุกโปรเจกต์
-- UI/UX Skill Pack ถูก bootstrap เป็น instruction-only ใต้ `.ai-kit/skills/ui-ux`; Agent โหลดเฉพาะ skill ที่ตรงกับงานเพื่อลด token/context
+- Skill packs (`ui-ux`, `api`, `data-layer`, `testing`) ถูก bootstrap เป็น instruction-only ใต้ `.ai-kit/skills/<pack>` ในรูปแบบ Agent Skills (`SKILL.md` + `references/`) จึงย้ายไปใช้กับ harness อื่นได้ทันที; Agent อ่าน `SKILL.md` แล้วเปิดเฉพาะ reference ที่ตรงกับงานเพื่อลด token/context
 - Knip, axe-core และ Lefthook เป็น optional project capabilities: detector แนะนำ/ตรวจจับได้ แต่ bootstrap ไม่ติดตั้ง dependency ให้อัตโนมัติ
 
 อ่าน [ผลตรวจสเปกและสิ่งที่แก้](docs/AUDIT.md) ก่อนนำ stack นี้ไปใช้จริง

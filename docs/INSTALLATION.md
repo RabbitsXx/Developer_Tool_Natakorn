@@ -138,9 +138,48 @@ Do not replace an existing database/provider/ORM merely to conform to this kit. 
 
 Do not install Vercel, Supabase, Drizzle, Prisma, Inngest, Playwright, observability SDKs, or Crawl4AI globally merely because they appear in the ecosystem.
 
-## UI/UX Skill Pack
+## Skill packs
 
-Bootstrap copies the instruction-only UI/UX skill pack to `.ai-kit/skills/ui-ux`. No package is installed. AI agents should read the pack only for user-facing UI/UX tasks and then load the smallest applicable subset from its README.
+Bootstrap synchronizes every pack registered in `toolchain.json` under `skills.packs` into `.ai-kit/skills/<pack>`, driven by `scripts/sync-skills.mjs`. No package is installed. The table below is generated from `skills.packs` in `toolchain.json`: to add or change a pack, edit the manifest and run `node scripts/sync-skill-docs.mjs`. Never edit the generated block by hand.
+
+<!-- skill-packs:start (generated from toolchain.json; run: node scripts/sync-skill-docs.mjs) -->
+
+_5 packs are registered in `toolchain.json` under `skills.packs`; each one is a folder with `SKILL.md` plus `references/` in the open Agent Skills format._
+
+| Pack | Source | Bootstrapped to | Use when |
+|---|---|---|---|
+| `ui-ux` | `skills/ui-ux` | `.ai-kit/skills/ui-ux` | User-facing pages, flows, component systems, responsive behavior, and visual QA. |
+| `api` | `skills/api` | `.ai-kit/skills/api` | HTTP endpoints and route handlers, request/response contracts, error shapes, authorization boundaries, and API tests. |
+| `data-layer` | `skills/data-layer` | `.ai-kit/skills/data-layer` | Schema and constraint design, migration safety and rollback, query and index work, tenant scoping, data verification. |
+| `testing` | `skills/testing` | `.ai-kit/skills/testing` | Choosing what to verify, test levels, browser journeys, flakiness and test data, regression tests. |
+| `release` | `skills/release` | `.ai-kit/skills/release` | Planning and executing a production release safely: preflight verification, deploy execution, rollback readiness, release observability, and post-release confirmation. |
+
+<!-- skill-packs:end -->
+
+Each pack follows the open Agent Skills format described at `agentskills.io/specification`: a `SKILL.md` with YAML frontmatter (name, description, compatibility, metadata) plus a `references/` directory, so harnesses that discover skills can load it without rewriting anything.
+
+AI agents should activate one pack at a time, and only when the task matches it: read `SKILL.md` first, then open only the reference files the task maps to. Never load a whole pack for a small change.
+
+To use a pack in a specific harness, copy or symlink its folder into that harness's skills directory:
+
+```text
+.claude/skills/ui-ux     # Claude Code, and harnesses that read .claude/skills
+.cursor/skills/api       # Cursor (Cursor also loads .claude/skills and .codex/skills)
+```
+
+Keep `.ai-kit/skills/` as the source of truth after bootstrap: a symlink stays in sync automatically, while a plain copy must be refreshed when the kit updates. Adding a pack is one command when the default shape fits:
+
+```bash
+node scripts/new-skill.mjs --id release \
+  --summary "Release and rollback procedure for a deployment." \
+  --summary-th "ขั้นตอน release และ rollback ของการ deploy" \
+  --recommend web-framework \
+  --reference 01-preflight --reference 02-deploy --reference 03-rollback
+```
+
+This creates `skills/release/SKILL.md` plus one file per `--reference`, registers the pack under `skills.packs` in `toolchain.json` (inserted textually, so the manifest diff stays one block), and regenerates the pack tables. The generated files are valid but unfinished: fill in every `<!-- TODO -->` marker, then run `node scripts/validate-kit.mjs`, which reports the pack under `skillPacksPendingContent` until the markers are gone. Add `--dry-run` to preview without writing.
+
+Manual registration still works and is equivalent: write the pack folder, then add the entry under `skills.packs` with `summary`, `summaryTh`, `activation`, and `recommendFor`. Both bootstrap scripts and the detector pick a new pack up without code changes, because they read the manifest. Then run `node scripts/sync-skills.mjs --target <project>` for an existing project and `node scripts/sync-skill-docs.mjs` to regenerate the pack tables; `validate-kit.mjs` fails until those tables match. Validate a pack folder with the Agent Skills `skills-ref` tool if it is available.
 
 ## Playwright
 
