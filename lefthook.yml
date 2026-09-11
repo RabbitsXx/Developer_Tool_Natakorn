@@ -1,0 +1,25 @@
+# Kit self-verification guard.
+#
+# This file belongs to the kit repository itself. It runs the kit's own
+# self-check scripts whenever a commit touches a file that defines or
+# documents the kit contract, so the kit proves itself before it ships.
+#
+# Enable once per clone:  npx lefthook install
+# Disable again:          npx lefthook uninstall
+#
+# Downstream projects use templates/optional/lefthook.yml.example instead,
+# because those projects run their own package scripts rather than kit scripts.
+pre-commit:
+  parallel: true
+  commands:
+    kit-self-check:
+      glob:
+        - "*.md"
+        - "**/*.md"
+        - toolchain.json
+        - lefthook.yml
+        - "docs/**"
+        - "scripts/**"
+        - "skills/**"
+        - "templates/**"
+      run: node scripts/validate-kit.mjs && node scripts/verify-bootstrap-protocol.mjs

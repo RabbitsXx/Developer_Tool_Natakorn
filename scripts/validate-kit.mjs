@@ -9,6 +9,7 @@ const required = [
   'AGENTS.md',
   'SETUP.md',
   'toolchain.json',
+  'lefthook.yml',
   'docs/BOOTSTRAP_PROTOCOL.md',
   'docs/ARCHITECTURE.md',
   'docs/AUDIT.md',
@@ -62,10 +63,17 @@ for (const [name, text] of [['PowerShell bootstrap', bootstrapPs1], ['shell boot
   if (!text.includes('START_PROMPT.md') || !text.includes('setup-project.mjs')) throw new Error(`${name} does not establish AI bootstrap state`);
   if (!text.includes('.ai-kit') || !text.includes('skills/ui-ux')) throw new Error(`${name} does not bootstrap the UI/UX skill pack`);
 }
+const kitHook = await readFile(path.join(root, 'lefthook.yml'), 'utf8');
+for (const target of ['scripts/validate-kit.mjs', 'scripts/verify-bootstrap-protocol.mjs']) {
+  if (!kitHook.includes(target)) throw new Error(`lefthook.yml does not run ${target}`);
+}
+if (!kitHook.includes('pre-commit')) throw new Error('lefthook.yml must guard pre-commit');
+
 console.log(JSON.stringify({
   ok: true,
   schemaVersion: toolchain.schemaVersion,
   requiredFiles: required.length,
+  selfCheckHook: 'lefthook.yml (pre-commit)',
   contextBudget: toolchain.contextBudget,
   databaseOptions: toolchain.databaseOptions.map((item) => item.id),
   browserE2E: toolchain.tools.find((tool) => tool.id === 'playwright')?.tier,

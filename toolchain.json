@@ -12,7 +12,8 @@
   "selfCheck": {
     "validate": "node scripts/validate-kit.mjs",
     "verifyBootstrap": "node scripts/verify-bootstrap-protocol.mjs",
-    "rule": "Run both after changing kit files, templates, manifest contracts, or bootstrap scripts; both must report ok: true."
+    "gitHook": "lefthook.yml",
+    "rule": "Run both after changing kit files, templates, manifest contracts, or bootstrap scripts; both must report ok: true. The repository-local Lefthook pre-commit guard runs both automatically once enabled with `npx lefthook install`."
   },
   "skills": {
     "uiUx": {

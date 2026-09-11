@@ -1,5 +1,10 @@
 # Starter only. Before enabling, replace `npm` with the package manager selected by the lockfile
 # and remove commands for scripts the project does not have.
+#
+# This starter belongs to the project that copies it and references that project's own scripts.
+# The kit repository keeps a separate root `lefthook.yml` that runs the kit self-check scripts.
+# Keep hooks fast and install them locally with `npx lefthook install`; they do not replace the
+# full verification ladder or CI.
 pre-commit:
   parallel: true
   commands:

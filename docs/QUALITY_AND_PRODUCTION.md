@@ -42,6 +42,8 @@ Lefthook is an optional local guard for repositories with stable commands. Keep 
 
 Hooks supplement final verification and CI. They do not replace either. The starter is `templates/optional/lefthook.yml.example`.
 
+The kit repository itself keeps a working guard at `lefthook.yml`: its pre-commit job runs `node scripts/validate-kit.mjs` and `node scripts/verify-bootstrap-protocol.mjs` whenever staged files touch the kit contract (manifest, docs, scripts, skills, templates, or Markdown), so kit changes verify themselves. Enable it per clone with `npx lefthook install`. If Lefthook is not installed, run the two scripts manually before committing kit changes.
+
 ## Suggested verification ladder
 
 ```text
