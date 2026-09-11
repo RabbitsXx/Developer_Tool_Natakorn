@@ -93,7 +93,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
 ├── scripts/
 │   ├── doctor.ps1            # ตรวจเครื่อง Windows แบบ read-only
 │   ├── doctor.sh             # ตรวจเครื่อง macOS/Linux แบบ read-only
-│   ├── verify-tools.ps1      # alias บาง ๆ ของ doctor.ps1 (ผู้เรียกเดิมยังใช้ได้)
+│   ├── verify-tools.ps1      # ตรวจเครื่อง + สัญญา kit ในคำสั่งเดียว (Windows)
 │   ├── setup-project.mjs     # ตรวจ mode/stack และเขียน .ai-kit/project.json
 │   ├── project-state.mjs     # detector/state contract ที่ไม่อ่าน secret .env
 │   ├── bootstrap-project.ps1 # ลง template + state ในโปรเจกต์ Windows
@@ -111,7 +111,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
 หลังแก้ไฟล์ใน kit (templates, manifest หรือ bootstrap scripts) ให้รัน self-check ทั้งสองตัวก่อน commit:
 
 ```bash
-node scripts/validate-kit.mjs               # ไฟล์บังคับ 27 ไฟล์ + toolchain contract
+node scripts/validate-kit.mjs               # ไฟล์บังคับ 28 ไฟล์ + toolchain contract
 node scripts/verify-bootstrap-protocol.mjs  # NEW / EXISTING / RESUME + drift + secret isolation
 ```
 
@@ -121,6 +121,12 @@ node scripts/verify-bootstrap-protocol.mjs  # NEW / EXISTING / RESUME + drift + 
 
 ```bash
 npx lefthook install     # ลง hook เข้า .git/hooks (ปิดด้วย npx lefthook uninstall)
+```
+
+บน Windows ใช้ entry point เดียวได้เลย — `verify-tools.ps1` จะรัน `doctor.ps1` แล้วต่อด้วย self-check ทั้งสอง พร้อมสรุปและ exit code เดียว (ใช้ `-SkipTools` เมื่อต้องการเฉพาะสัญญาของ kit):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-tools.ps1
 ```
 
 Hook เป็นตัวช่วย ไม่ใช่เงื่อนไขบังคับ: ถ้าเครื่องไหนยังไม่มี Lefthook คำสั่งมือด้านบนยังใช้ได้ตามปกติ และ `templates/optional/lefthook.yml.example` ยังเป็น starter สำหรับโปรเจกต์ปลายทางที่ใช้สคริปต์ของตัวเอง
@@ -168,11 +174,12 @@ Hook เป็นตัวช่วย ไม่ใช่เงื่อนไ�
 
 | สคริปต์ | วิธีทดสอบ | ผลจริง |
 |---|---|---|
-| `validate-kit.mjs` | `node scripts/validate-kit.mjs` | `ok: true` · required files 27 · `selfCheckHook: lefthook.yml (pre-commit)` |
+| `validate-kit.mjs` | `node scripts/validate-kit.mjs` | `ok: true` · required files 28 · `selfCheckHook: lefthook.yml (pre-commit)` |
 | `verify-bootstrap-protocol.mjs` | `node scripts/verify-bootstrap-protocol.mjs` | 10/10 PASS (NEW / EXISTING / RESUME, idempotent state, secret isolation, drift, multiple lockfile guard) |
 | `doctor.ps1` | `powershell -File scripts/doctor.ps1` และ `-Strict` | `0 required issue(s), 0 recommended issue(s)` |
 | `doctor.sh` | `bash scripts/doctor.sh` | `0 required issue(s), 0 recommended issue(s)` |
-| `verify-tools.ps1` | `powershell -File scripts/verify-tools.ps1` | เป็น wrapper 2 บรรทัดที่เรียก `doctor.ps1` — output เหมือนกันทุกบรรทัด |
+| `verify-tools.ps1` | `powershell -File scripts/verify-tools.ps1` (+ `-SkipTools`) | entry point เดียว: `[OK]` ทั้ง 3 stage (doctor → validate-kit → verify-bootstrap) · `-SkipTools` รัน 2 stage ของ kit · exit 0 |
+| `verify-tools.ps1` (failure path) | แตะ `toolchain.json` ให้ `schemaVersion` เป็น 3 แล้วรัน `-SkipTools` | `[FAIL]  kit contract (validate-kit.mjs) (exit 1)` พร้อมข้อความจริง `Error: toolchain schemaVersion must be >= 4` และ script ออกด้วย exit 1 (ไม่กลืน error) |
 | `setup-project.mjs` | โฟลเดอร์ว่าง | โหมด `NEW_PROJECT`, เขียน `.ai-kit/project.json`, `pendingDecisions: [product_requirements_before_stack_selection]`, safety flags ทั้ง 4 เป็น `false` |
 | `setup-project.mjs --dry-run` | โฟลเดอร์ว่างอีกอัน | `dryRun: true`, `stateFile: null` และไม่มีการสร้าง `.ai-kit/` |
 | `setup-project.mjs` + drift | เติม `package.json` (`next`) แล้วรันซ้ำ | `framework: nextjs`, `driftDetected: true` → `--accept-drift` แล้วเป็น `false` และรันซ้ำยังคง `false` |

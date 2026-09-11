@@ -32,6 +32,7 @@ const required = [
   'scripts/project-state.mjs',
   'scripts/setup-project.mjs',
   'scripts/verify-bootstrap-protocol.mjs',
+  'scripts/verify-tools.ps1',
 ];
 
 for (const file of required) await access(path.join(root, file));
@@ -63,6 +64,11 @@ for (const [name, text] of [['PowerShell bootstrap', bootstrapPs1], ['shell boot
   if (!text.includes('START_PROMPT.md') || !text.includes('setup-project.mjs')) throw new Error(`${name} does not establish AI bootstrap state`);
   if (!text.includes('.ai-kit') || !text.includes('skills/ui-ux')) throw new Error(`${name} does not bootstrap the UI/UX skill pack`);
 }
+const verifyTools = await readFile(path.join(root, 'scripts/verify-tools.ps1'), 'utf8');
+for (const evidence of ['doctor.ps1', 'scripts/validate-kit.mjs', 'scripts/verify-bootstrap-protocol.mjs']) {
+  if (!verifyTools.includes(evidence)) throw new Error(`verify-tools.ps1 does not run ${evidence}`);
+}
+
 const kitHook = await readFile(path.join(root, 'lefthook.yml'), 'utf8');
 for (const target of ['scripts/validate-kit.mjs', 'scripts/verify-bootstrap-protocol.mjs']) {
   if (!kitHook.includes(target)) throw new Error(`lefthook.yml does not run ${target}`);
