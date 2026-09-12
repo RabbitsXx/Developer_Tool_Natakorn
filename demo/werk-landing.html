@@ -177,6 +177,25 @@
   footer.site li a:hover { color: var(--teal); }
   footer.site .demo-note { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
 
+  /* value props */
+  .whygrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 980px) { .whygrid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .whygrid { grid-template-columns: 1fr; } }
+  .why { border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; background: #fff; }
+  .wemoji { font-size: 26px; display: block; margin-bottom: 10px; }
+  .why h3 { font-size: 16.5px; margin-bottom: 6px; }
+  .why p { color: var(--muted); font-size: 14px; }
+
+  /* blog */
+  .bloggrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 860px) { .bloggrid { grid-template-columns: 1fr; } }
+  .blogcard { border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; background: #fff; text-decoration: none; display: flex; flex-direction: column; gap: 10px; transition: box-shadow .15s, transform .15s; }
+  .blogcard:hover { box-shadow: 0 8px 22px rgba(28,43,36,.1); transform: translateY(-2px); }
+  .btag { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--teal); }
+  .blogcard h3 { font-size: 16.5px; line-height: 1.45; }
+  .blogcard p { color: var(--muted); font-size: 14px; flex: 1; }
+  .bmeta { color: var(--faint, var(--muted)); font-size: 12.5px; }
+
   /* search toast */
   .toast {
     position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
@@ -206,6 +225,8 @@
     <nav class="nav-actions" aria-label="เมนูผู้ใช้">
       <a href="#categories">หมวดหมู่</a>
       <a href="#start">เริ่มขายบริการ</a>
+      <a href="#login" data-demo-link>เข้าสู่ระบบ</a>
+      <a class="btn btn-outline sm" href="#register" data-demo-link style="padding:8px 18px">สมัครใช้งานฟรี</a>
       <a class="btn btn-primary sm" href="#get" style="padding:8px 18px">เริ่มจ้างงาน</a>
     </nav>
   </div>
@@ -226,6 +247,7 @@
         <a class="quick-tag" href="#services">เขียนแบบบ้าน</a>
         <a class="quick-tag" href="#services">ดูดวง</a>
       </div>
+      <p style="margin-top:16px;font-size:15px">มีงานในใจแล้ว? <a href="#post" data-demo-link style="color:var(--teal);font-weight:700">โพสต์งานฟรี</a> ให้ฟรีแลนซ์ส่งข้อเสนอมาหาคุณ</p>
     </div>
   </section>
 
@@ -334,6 +356,19 @@
     </div>
   </section>
 
+  <!-- WHY / VALUE PROPS -->
+  <section id="why">
+    <div class="wrap">
+      <div class="head"><h2>ทำไมผู้จ้างกว่าล้านรายเลือกจ้างผ่านแพลตฟอร์ม</h2></div>
+      <div class="whygrid">
+        <div class="why"><span class="wemoji">🔒</span><h3>ระบบถือเงินกลาง</h3><p>เงินของคุณถูกถือไว้อย่างปลอดภัย และปล่อยให้ฟรีแลนซ์เมื่องานเสร็จตามข้อตกลงเท่านั้น</p></div>
+        <div class="why"><span class="wemoji">✅</span><h3>รับประกันความสำเร็จ</h3><p>งานไม่ตรงตามที่คุยกัน? ทีมงานช่วยตรวจสอบและดำเนินการเรื่องเงินจนจบ ไม่ทิ้งคุณคนเดียว</p></div>
+        <div class="why"><span class="wemoji">🧑‍💻</span><h3>ฟรีแลนซ์ผ่านการคัดคุณภาพ</h3><p>ทุกบริการมีผลงานจริง รีวิวจริงจากผู้จ้างก่อนหน้า และยืนยันตัวตนก่อนเปิดขาย</p></div>
+        <div class="why"><span class="wemoji">💬</span><h3>ทีมซัพพอร์ตคนไทย</h3><p>ตอบกลับไวทุกขั้นตอน ตั้งแต่เลือกฟรีแลนซ์จนถึงวันรับงาน</p></div>
+      </div>
+    </div>
+  </section>
+
   <!-- HOW IT WORKS -->
   <section id="how">
     <div class="wrap">
@@ -394,6 +429,36 @@
     </div>
   </section>
 
+  <!-- BLOG -->
+  <section id="blog">
+    <div class="wrap">
+      <div class="head">
+        <h2>บทความแนะนำ</h2>
+        <a href="#blog" data-demo-link>ดูบทความทั้งหมด →</a>
+      </div>
+      <div class="bloggrid">
+        <a class="blogcard" href="#blog" data-demo-link>
+          <span class="btag">คู่มือ</span>
+          <h3>วิธีเขียนโจทย์งานให้ฟรีแลนซ์เข้าใจใน 5 นาที</h3>
+          <p>โจทย์ที่ดีต่อการจ้างงานมีอะไรบ้าง — ขอบเขต ตัวอย่างที่ชอบ และกำหนดส่งที่เป็นไปได้</p>
+          <span class="bmeta">12 ก.ย. 2026 · อ่าน 6 นาที</span>
+        </a>
+        <a class="blogcard" href="#blog" data-demo-link>
+          <span class="btag">บทความ</span>
+          <h3>ราคาทำเว็บไซต์ปี 2026 ควรเริ่มต้นเท่าไร?</h3>
+          <p>เทียบช่วงราคาตามประเภทเว็บ จากหน้าร้านเล็ก ๆ ถึงระบบหลังบ้านเต็มรูปแบบ</p>
+          <span class="bmeta">8 ก.ย. 2026 · อ่าน 8 นาที</span>
+        </a>
+        <a class="blogcard" href="#blog" data-demo-link>
+          <span class="btag">คู่มือ</span>
+          <h3>จ้างงานครั้งแรก ควรดูอะไรในรีวิว?</h3>
+          <p>อ่านรีวิวอย่างไรให้เห็นสัญญาณเตือน และรู้ว่าบริการไหนน่าลงทุน</p>
+          <span class="bmeta">2 ก.ย. 2026 · อ่าน 5 นาที</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- CTA BANDS -->
   <section id="start">
     <div class="wrap">
@@ -427,6 +492,35 @@
         <summary>หน้านี้เป็นเว็บจริงหรือไม่?</summary>
         <p>ไม่ใช่ — Werk เป็นหน้าเดโมเพื่อการศึกษา สร้างขึ้นเพื่อแสดงโครงสร้างหน้าแรกของเว็บจ้างฟรีแลนซ์ ตัวเลข บริการ และรีวิวทั้งหมดเป็นข้อมูลตัวอย่าง</p>
       </details>
+    </div>
+  </section>
+
+  <!-- APP DOWNLOAD -->
+  <section id="app" style="padding-top:0">
+    <div class="wrap">
+      <div class="cta-band" style="background:var(--teal-dark)">
+        <div>
+          <h2>จ้างงานจากมือถือได้ทุกที่</h2>
+          <p>แชทกับฟรีแลนซ์ ตรวจงาน และอนุมัติเงิน จากแอปเดียว</p>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <a class="btn" href="#app" data-demo-link>⬇ App Store (ตัวอย่าง)</a>
+          <a class="btn" href="#app" data-demo-link>▶ Google Play (ตัวอย่าง)</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOR BUSINESS -->
+  <section id="business" style="padding-top:0">
+    <div class="wrap">
+      <div class="cta-band" style="background:#fff;color:var(--ink);border:1px solid var(--line)">
+        <div>
+          <h2>Werk สำหรับองค์กร</h2>
+          <p style="color:var(--muted)">จัดการฟรีแลนซ์หลายโปรเจกต์ ใบเสร็จครบ ผู้อนุมัติหลายคน รายงานสรุปทุกงบ</p>
+        </div>
+        <a class="btn btn-primary" href="#business" data-demo-link>พูดคุยกับทีมขาย</a>
+      </div>
     </div>
   </section>
 
@@ -477,6 +571,9 @@
         </ul>
       </div>
     </div>
+    <p style="margin-top:26px;color:var(--muted);font-size:13px">
+      ช่องทางชำระเงิน (ตัวอย่าง): บัตรเครดิต / เดบิต · พร้อมเพย์ · TrueMoney Wallet · โอนธนาคาร
+    </p>
     <p class="demo-note">
       Werk เป็นหน้าเดโมเพื่อการศึกษา สร้างขึ้นเพื่อศึกษาโครงสร้างหน้าแรกของเว็บจ้างฟรีแลนซ์ ไม่มีความเกี่ยวข้องกับ
       แพลตฟอร์มใดในตลาดจริง ตัวเลข บริการ ราคา และรีวิวทั้งหมดเป็นข้อมูลตัวอย่าง · © 2026 Werk (ตัวละครสมมติ)
@@ -515,6 +612,14 @@
     link.addEventListener('click', (event) => {
       const label = link.querySelector('b')?.textContent ?? link.textContent.trim().slice(0, 40);
       showToast(`(เดโม) ไปยังหน้า: ${label}`);
+    });
+  });
+
+  // All demo-only links (login, register, blog, app stores, business): honest feedback.
+  document.querySelectorAll('[data-demo-link]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      showToast(`(เดโม) ไปยังหน้า: ${link.textContent.trim().replace(/[→⬇▶]/g, '').trim().slice(0, 44)}`);
     });
   });
 </script>
