@@ -38,6 +38,38 @@ Two decisions follow from measuring it:
 
 The numbers come from `wc -c` on the committed files (tokens ≈ bytes / 4) and are reproducible; they are estimates, not measured model tokenizer counts.
 
+## v0.9.0 → v1.0.0 trial result (2026-09-12)
+
+Per `docs/RELEASE_PLAN.md`, the frozen kit (tag `v0.9.0`) was used unmodified on one new project: a job-tracking HTTP service (`/tmp/vibekit-trial/app`, zero dependencies, Node's built-in test runner). Three real tasks, each ending in the project's own `npm run verify` plus a commit-ready tree.
+
+**Criterion 1 — preserve, don't replace: PASS.** Bootstrap into the empty directory wrote instruction/state files only; zero stack files were forced. The stack (Node, `npm`, file-backed store) was derived from the task, and the detector classified the project `NEW_PROJECT` → `RESUME_CONFIGURED_PROJECT` on resume.
+
+**Criterion 2 — verified work: PASS.** Every task ended with a run command whose output was read: `node --test` 31→41→42 tests, all passing, and `npm run verify` 15/15 — syntax, tests, and a live server request matrix including authorization-negative and validation-negative cases. One verify-table expectation of ours was itself wrong (a cursor check that asserted a cursor must exist with exactly `limit` jobs) and was corrected after the live run showed the real behavior; the service was right, the check was not.
+
+**Criterion 3 — packs actually used: PASS (4 packs).**
+- `api` (task 1): contract fixed first in `docs/api-contract.md` before handlers; real-request verification with the required negative and authorization cases (401 unauthenticated, 403 viewer-on-write, 422 invalid type, 413, 415, 405 with `Allow`).
+- `testing` (tasks 1, 3): regression written first and confirmed failing 3/3 for the stated reason, then passing 3/3 after the fix (task 3); no check claimed without a run.
+- `data-layer` (task 2): schema v1→v2 migration applied to the live local data dir with observed output (`backfilled: 3`), idempotence proven by a repeated `--up` (`applied: []`), rollback executed and byte-checked (`--down` restored the exact v1 records), then re-applied.
+- `release` (task 3, partial): preflight ladder run locally; explicitly **not** claimed as a deploy verification — no deploy target exists, and that limitation is in the record.
+
+**Criterion 4 — measured: PASS.**
+| Metric | Task 1 | Task 2 | Task 3 | Total |
+|---|---|---|---|---|
+| Wall clock (metrics events) | 19 min | 19 min | 3 min | 41 min |
+| Kit context loaded (pack SKILL+refs, est. tokens) | ~5,900 | ~2,600 | ~0 (reused) | ~8,500 |
+| Files written/edited | 12 | 5 | 2 | 19 |
+| Kit edits required | 0 | 0 | 0 | **0 (target met)** |
+
+Token figures are bytes/4 estimates, not measured tokenizer counts.
+
+**Failures hit while using the kit (the part that matters):**
+1. **Node's `assert.throws` returns `undefined`** (not the error) — 5 test failures until corrected; a Node-behavior gap, not a kit defect.
+2. **Windows ESM import bug in the migration runner** — `import(absolutePath)` fails with `ERR_UNSUPPORTED_ESM_URL_SCHEME` on `C:` paths; fixed with `pathToFileURL`. The kit's Windows-only author environment caught it before any cross-platform release would have.
+3. **A real concurrency defect in the app, found by following the packs:** 20 concurrent POSTs with one `Idempotency-Key` produced 20 jobs (check-then-insert race). Reproduced 3/3, fixed by serializing `create()` plus a store-level constraint, pinned by a named regression test.
+4. **Drift friction on resume:** after our own tasks changed the stack fingerprint, the detector blocked state writes until an explicit `--accept-drift`. This is the designed behavior, but the output does not say *what* drifted — the only genuine usability complaint of the trial.
+
+**Verdict: criteria met → tag `v1.0.0`.** The kit demonstrably preserved the stack, enforced verified work, and — most concretely — the packs' own rules led to finding and pinning a real concurrency bug that a happy-path session would have shipped. Per the stop rule, nothing unverifiable was added: the findings above are recorded, and the v1.0.1 backlog is unchanged.
+
 ## Current Windows workstation result
 
 Latest doctor verification for this checkout:

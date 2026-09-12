@@ -6,9 +6,13 @@ This file exists for one reason: to give the kit a defined end so it gets used i
 
 Every gate in this kit validates the kit against itself (`validate-kit`, `verify-bootstrap-protocol`, `eval-kit`, `sync-skill-docs`). That proves internal consistency and proves nothing about whether the kit helps on real work. Until the kit is used on a real project, "improvements" are speculation, and each one adds tokens to every future session.
 
-## Status: frozen at v0.9.0
+## Status: v1.0.0 criteria met (2026-09-12)
 
-Everything present at the `v0.9.0` tag is frozen. No new skill pack, script, gate, or document is added from here until the trial below is complete.
+The v0.9.0 trial is complete: three real tasks on one new project, all four criteria passed, zero kit edits required. Evidence and failures are recorded in `docs/AUDIT.md` → "v0.9.0 → v1.0.0 trial result". The result below is kept for the record.
+
+### Trial record (frozen at v0.9.0)
+
+Everything present at the `v0.9.0` tag was frozen. No new skill pack, script, gate, or document was added during the trial.
 
 ## v1.0.0 — definition of done
 
