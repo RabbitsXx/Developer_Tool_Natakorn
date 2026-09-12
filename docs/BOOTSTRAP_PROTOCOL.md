@@ -36,14 +36,18 @@ The file contains only non-secret project metadata:
 - initial project mode and current setup status
 - detected runtime/framework/package manager
 - database provider and access layer signals
-- UI/UX skill-pack presence, browser E2E, accessibility, code-health, Git-hook, background-work, observability, and deployment signals
+- UI/UX, API, data-layer, testing, security, infrastructure, mobile, and release skill-pack presence
+- browser E2E, accessibility, code-health, Git-hook, background-work, observability, deployment, mobile, and infrastructure signals
 - available and potentially useful capabilities
 - quality-gate script names
 - architecture fingerprint
 - drift status
 - pending setup decisions
 
-Never store tokens, passwords, connection strings, API keys, or raw `.env` values in this file.
+- `policy.json` is copied to `.ai-kit/policy.json` and supplies a deny-first command policy; `scripts/policy-check.mjs` never executes commands, but classifies and audits them.
+- `.ai-kit/memory/` stores non-secret decisions, lessons, and the current handoff; `.ai-kit/metrics/` stores compact task/session evidence. Current repository evidence always wins.
+
+
 
 ## Safe detector
 
@@ -77,13 +81,29 @@ Never use `--accept-drift` simply to silence a warning.
 
 ## Bootstrap behavior
 
-`bootstrap-project.ps1` and `bootstrap-project.sh` perform two jobs:
-
-1. Add missing AI-project instruction files without overwriting existing project files.
-2. Synchronize every Agent Skills pack registered in `toolchain.json` (`ui-ux`, `api`, `data-layer`, `testing`, `release`) into `.ai-kit/skills/<pack>` without overwriting project-local edits, using the manifest-driven sync script.
+1. Add missing AI-project instruction, policy, and memory files without overwriting existing project files.
+2. Synchronize every Agent Skills pack registered in `toolchain.json` into `.ai-kit/skills/<pack>` without overwriting project-local edits, using the manifest-driven sync script.
 3. Run the safe project detector to establish `.ai-kit/project.json`.
 
+
+
 The bootstrap process intentionally does **not** install Playwright, `@axe-core/playwright`, Knip, Lefthook, Supabase, Neon, Drizzle, Prisma, Docker, Inngest, observability, CI, or any other optional dependency. Skills are text instructions only; package installation remains project-specific.
+
+Before mutating Git, database, cloud, container, or remote systems, use the policy checker. A deny decision is a hard stop; approval-required decisions need explicit authorization. If authorized, execute through `scripts/run-safe.mjs`, which records the approval and only then starts the command. These scripts are a command gate and audit trail, not an OS sandbox; a harness must still enforce process permissions.
+
+
+```text
+node scripts/policy-check.mjs --target /path/to/project --command "..."
+```
+
+Use the memory and metrics commands for non-secret continuity and evidence:
+
+```text
+node scripts/memory.mjs --target /path/to/project --kind handoff --text "..."
+node scripts/metrics.mjs --target /path/to/project --event session-end --session <id> --status passed
+```
+
+
 
 ## AI startup order
 
@@ -102,7 +122,7 @@ docs/run.md + repository docs
     ↓
 Targeted code discovery
     ↓
-If a task matches a pack (ui-ux, api, data-layer, testing, release): .ai-kit/skills/<pack>/SKILL.md → only the references/ the task maps to
+If a task matches a pack (ui-ux, api, data-layer, testing, security, infrastructure, mobile, release): `.ai-kit/skills/<pack>/SKILL.md` → only the references/ the task maps to
     ↓
 Actual task
 ```
