@@ -29,6 +29,10 @@ __pycache__/
 supabase/.temp/
 supabase/.branches/
 
+# Runtime state the kit tools write when they are run inside this repository.
+# Bootstrapped projects keep their own .ai-kit/ under the project gitignore rules.
+.ai-kit/
+
 # OS and editor files
 .DS_Store
 Thumbs.db

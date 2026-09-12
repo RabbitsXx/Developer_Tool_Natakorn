@@ -21,8 +21,9 @@ repomix-output.*
 __pycache__/
 .pytest_cache/
 
-# Workspace, cloud and tooling state
-.archive/
+.ai-kit/audit/
+.ai-kit/metrics/
+
 .freebuff/
 .vercel/
 .supabase/

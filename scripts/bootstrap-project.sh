@@ -42,6 +42,8 @@ copy_if_missing run.md docs/run.md
 copy_if_missing env.example .env.example
 copy_if_missing repomix.config.json repomix.config.json
 copy_if_missing repomixignore .repomixignore
+copy_if_missing policy.json .ai-kit/policy.json
+copy_if_missing memory/README.md .ai-kit/memory/README.md
 
 node "$kit_root/scripts/sync-skills.mjs" --target "$target"
 

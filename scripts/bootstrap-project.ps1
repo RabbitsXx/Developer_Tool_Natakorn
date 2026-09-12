@@ -22,7 +22,9 @@ $copies = @(
     @{ Source = 'run.md'; Destination = 'docs\run.md' },
     @{ Source = 'env.example'; Destination = '.env.example' },
     @{ Source = 'repomix.config.json'; Destination = 'repomix.config.json' },
-    @{ Source = 'repomixignore'; Destination = '.repomixignore' }
+    @{ Source = 'repomixignore'; Destination = '.repomixignore' },
+    @{ Source = 'policy.json'; Destination = '.ai-kit\policy.json' },
+    @{ Source = 'memory\README.md'; Destination = '.ai-kit\memory\README.md' }
 )
 
 Write-Output "Bootstrapping AI project files into: $target"
