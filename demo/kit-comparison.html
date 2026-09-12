@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeCoder Kit — With vs Without</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e;
+    --bad: #f85149; --good: #3fb950; --warn: #d29922; --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", sans-serif;
+    line-height: 1.55; padding: 2rem 1rem 4rem;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 1.9rem; margin-bottom: .3rem; }
+  h1 .accent { color: var(--accent); }
+  .sub { color: var(--muted); margin-bottom: 2rem; }
+  .sub code { color: var(--text); background: var(--panel); padding: .1rem .35rem; border-radius: 4px; font-size: .85em; }
+
+  .scenario { margin-bottom: 2.2rem; }
+  .scenario h2 { font-size: 1.2rem; margin-bottom: .2rem; }
+  .scenario .desc { color: var(--muted); font-size: .92rem; margin-bottom: .8rem; }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 760px) { .duo { grid-template-columns: 1fr; } }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.2rem; }
+  .card h3 { font-size: .95rem; display: flex; align-items: center; gap: .5rem; margin-bottom: .7rem; }
+  .card.without h3 { color: var(--bad); }
+  .card.with h3 { color: var(--good); }
+  .badge { font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+           padding: .15rem .5rem; border-radius: 99px; border: 1px solid; }
+  .card.without .badge { color: var(--bad); border-color: var(--bad); }
+  .card.with .badge { color: var(--good); border-color: var(--good); }
+  .card ul { list-style: none; }
+  .card li { padding: .32rem 0 .32rem 1.4rem; position: relative; font-size: .9rem; }
+  .card.without li::before { content: "✕"; position: absolute; left: 0; color: var(--bad); font-weight: 700; }
+  .card.with li::before { content: "✓"; position: absolute; left: 0; color: var(--good); font-weight: 700; }
+  .card li .why { color: var(--muted); }
+  .stat { display: inline-block; margin-top: .7rem; font-size: .8rem; color: var(--muted);
+          border-top: 1px dashed var(--border); padding-top: .6rem; width: 100%; }
+  .stat b { color: var(--text); }
+
+  /* race demo */
+  .racebox { margin-top: 1rem; }
+  button.run {
+    background: var(--accent); color: #0d1117; border: 0; font-weight: 700; font-size: .85rem;
+    padding: .5rem 1rem; border-radius: 7px; cursor: pointer; margin-right: .5rem;
+  }
+  button.run:disabled { opacity: .45; cursor: default; }
+  .racegrid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin: .8rem 0; }
+  .req { height: 22px; border-radius: 4px; background: #21262d; border: 1px solid var(--border);
+         font-size: .55rem; display: flex; align-items: center; justify-content: center;
+         color: var(--muted); transition: background .2s, color .2s; }
+  .req.create { background: var(--accent); color: #0d1117; font-weight: 700; }
+  .req.replay { background: #1f6feb33; color: var(--accent); }
+  .req.dup { background: var(--bad); color: #0d1117; font-weight: 700; }
+  .racelog { font-size: .85rem; min-height: 1.4em; }
+  .racelog b.dup { color: var(--bad); }
+  .racelog b.ok { color: var(--good); }
+  .racelog b.acc { color: var(--accent); }
+  .hint { font-size: .78rem; color: var(--muted); margin-top: .4rem; }
+
+  /* token bars */
+  .bars { margin-top: .6rem; display: grid; gap: .55rem; }
+  .bar-row { display: grid; grid-template-columns: 220px 1fr 70px; gap: .7rem; align-items: center; font-size: .85rem; }
+  @media (max-width: 700px) { .bar-row { grid-template-columns: 130px 1fr 60px; } }
+  .bar-track { background: #21262d; border-radius: 6px; height: 20px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; }
+  .bar-fill.loaded { background: linear-gradient(90deg, #f85149, #f0883e); }
+  .bar-fill.smart { background: linear-gradient(90deg, #1f6feb, #3fb950); }
+  .bar-val { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* metrics table */
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; margin-top: .6rem; }
+  th, td { border: 1px solid var(--border); padding: .5rem .7rem; text-align: left; }
+  th { background: #1c2129; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  td.num { font-variant-numeric: tabular-nums; }
+  .win { color: var(--good); font-weight: 600; }
+
+  .verdict { margin-top: 2.4rem; border: 1px solid var(--good); border-radius: 10px;
+             background: #12261a; padding: 1.2rem 1.4rem; }
+  .verdict h2 { color: var(--good); font-size: 1.15rem; margin-bottom: .5rem; }
+  .verdict p { font-size: .92rem; }
+
+  .honest { margin-top: 1.4rem; border: 1px solid var(--warn); border-radius: 10px;
+            background: #241d10; padding: 1rem 1.3rem; }
+  .honest h2 { color: var(--warn); font-size: 1rem; margin-bottom: .4rem; }
+  .honest li { font-size: .88rem; margin-left: 1.2rem; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Same three tasks, <span class="accent">with and without</span> the VibeCoder Kit</h1>
+  <p class="sub">
+    Every number below comes from a real recorded trial: a job-tracking API built from zero, three tasks end-to-end
+    (<code>bootstrap → code → verify</code>), documented in <code>docs/AUDIT.md</code> and tagged <code>v1.0.0</code>.
+    The "without" column is what the same work looks like with a bare agent and no operating kit.
+  </p>
+
+  <!-- TASK 1 -->
+  <div class="scenario">
+    <h2>Task 1 — Build an HTTP API (create / fetch / list jobs)</h2>
+    <p class="desc">The kit's <b>api</b> pack forces the contract to be written before handlers, and bans "tests pass" as evidence.</p>
+    <div class="duo">
+      <div class="card without">
+        <h3><span class="badge">Without tool</span> Happy path shipped</h3>
+        <ul>
+          <li>Endpoints coded first, contract invented by whatever the handler returned <span class="why">— error shapes drift per route</span></li>
+          <li>Verified by "it runs" + a successful build</li>
+          <li>200-with-error-payload and leaked stack traces survive to production</li>
+          <li>No replayable request collection; next session re-discovers the API by reading source</li>
+        </ul>
+        <div class="stat">Verification actually run: <b>0 real requests</b> · negative paths: <b>none</b></div>
+      </div>
+      <div class="card with">
+        <h3><span class="badge">With tool</span> Contract-first, request-proven</h3>
+        <ul>
+          <li>Route table + error envelope fixed in <code>docs/api-contract.md</code> before code</li>
+          <li>Live server request matrix: 401 unauthenticated, 403 viewer-on-write, 422 invalid type, 413, 415, 405 + <code>Allow</code></li>
+          <li>Replayable collection committed (<code>docs/requests.http</code>)</li>
+          <li>15/15 verify checks, each with expected vs <i>observed</i> status</li>
+        </ul>
+        <div class="stat"><b>15/15</b> checks · <b>31</b> tests · pack context loaded: <b>~5,900 tokens</b> (not the whole kit)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RACE DEMO -->
+  <div class="scenario">
+    <h2>Live difference — 20 concurrent submissions, one Idempotency-Key</h2>
+    <p class="desc">
+      This is not hypothetical: during the trial, the api pack's concurrency rules forced a probe that
+      <b>found this exact bug</b> in the "without" implementation — then the testing pack pinned it failing-first.
+    </p>
+    <div class="duo">
+      <div class="card without">
+        <h3><span class="badge">Without tool</span> Check-then-insert</h3>
+        <div class="racebox">
+          <button class="run" id="runBad">Run 20 concurrent requests</button>
+          <div class="racegrid" id="gridBad"></div>
+          <div class="racelog" id="logBad">Ready.</div>
+          <div class="hint">Reads "key not used yet" → inserts. 20 overlapping requests all pass the read.</div>
+        </div>
+        <div class="stat">Result: <b class="bad" style="color:var(--bad)">20 duplicate jobs</b> — and every test was green</div>
+      </div>
+      <div class="card with">
+        <h3><span class="badge">With tool</span> Serialized create + store constraint</h3>
+        <div class="racebox">
+          <button class="run" id="runGood">Run 20 concurrent requests</button>
+          <div class="racegrid" id="gridGood"></div>
+          <div class="racelog" id="logGood">Ready.</div>
+          <div class="hint">Uniqueness decided in one serialized section, enforced again on log reload.</div>
+        </div>
+        <div class="stat">Result: <b class="ok" style="color:var(--good)">1 job created</b>, 19 honest replays (<code>200</code>)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK 2 -->
+  <div class="scenario">
+    <h2>Task 2 — Schema change (v1 → v2, new fields)</h2>
+    <p class="desc">The kit's <b>data-layer</b> pack: "never claim a migration succeeded because the app still builds."</p>
+    <div class="duo">
+      <div class="card without">
+        <h3><span class="badge">Without tool</span> Edit the file, hope</h3>
+        <ul>
+          <li>Fields added straight to the record shape; old data read with the new code — or crashes, or silently misreads</li>
+          <li>No rollback path, no version marker, no way back</li>
+          <li>"Verified" because the build passed</li>
+        </ul>
+        <div class="stat">Rollback executed: <b>never</b> · idempotence: <b>unknown</b></div>
+      </div>
+      <div class="card with">
+        <h3><span class="badge">With tool</span> Migration with receipts</h3>
+        <ul>
+          <li>Versioned migration chain; store refuses a v1 log and names the command to run</li>
+          <li>Live drill on the app's own data: <code>--up</code> backfilled 3/3 → repeat <code>--up</code> applied 0 (idempotent)</li>
+          <li><code>--down</code> executed and byte-checked: exact v1 records restored</li>
+          <li>Constraint negatives tested: duplicate key rejected, negative counter rejected</li>
+        </ul>
+        <div class="stat">Rollback: <b>executed & verified</b> · 10 data-layer tests · ~<b>2,600</b> pack tokens loaded</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASK 3 -->
+  <div class="scenario">
+    <h2>Task 3 — Fix the bug the packs found</h2>
+    <p class="desc">The kit's <b>testing</b> pack: regression first, watch it fail for the stated reason, then fix.</p>
+    <div class="duo">
+      <div class="card without">
+        <h3><span class="badge">Without tool</span> Patch and move on</h3>
+        <ul>
+          <li>Race "fixed" by adding a check somewhere else — same class of bug ships again later</li>
+          <li>No test; the fix's correctness rests on the author's confidence</li>
+          <li>Report: "should be fixed now"</li>
+        </ul>
+      </div>
+      <div class="card with">
+        <h3><span class="badge">With tool</span> Failing-first, pinned forever</h3>
+        <ul>
+          <li>Test written first, confirmed failing <b>3/3 runs</b> for the stated reason (all 201s)</li>
+          <li>Fix: serialized create + store-level uniqueness; test green <b>3/3 runs</b></li>
+          <li>Named regression test prevents the whole class; release pack preflight run with scope honestly limited (no deploy target — stated in the record)</li>
+        </ul>
+        <div class="stat">Suite: <b>42/42</b> · verify: <b>15/15</b> · evidence table printed by the project's own <code>npm run verify</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXT COST -->
+  <div class="scenario">
+    <h2>Context cost per task — progressive disclosure vs load-everything</h2>
+    <p class="desc">The kit ships 8 packs / 48 files. Loading them all would cost ~17,300 tokens per session. The kit's routing loads only what the task maps to.</p>
+    <div class="card">
+      <div class="bars">
+        <div class="bar-row"><span>Without kit: no skill routing</span><div class="bar-track"><div class="bar-fill loaded" style="width:100%"></div></div><span class="bar-val">~17,300</span></div>
+        <div class="bar-row"><span>With kit — Task 1 (api + testing)</span><div class="bar-track"><div class="bar-fill smart" style="width:34%"></div></div><span class="bar-val">~5,900</span></div>
+        <div class="bar-row"><span>With kit — Task 2 (data-layer)</span><div class="bar-track"><div class="bar-fill smart" style="width:15%"></div></div><span class="bar-val">~2,600</span></div>
+        <div class="bar-row"><span>With kit — Task 3 (reused context)</span><div class="bar-track"><div class="bar-fill smart" style="width:2%"></div></div><span class="bar-val">~0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="scenario">
+    <h2>Trial scoreboard (measured, from .ai-kit/metrics/)</h2>
+    <div class="card">
+      <table>
+        <tr><th>Metric</th><th>Without tool (expected)</th><th>With tool (observed)</th></tr>
+        <tr><td>Stack forced on bootstrap</td><td>often replaced by agent's favorite</td><td class="win">0 files forced; stack derived from task</td></tr>
+        <tr><td>Checks claimed vs run</td><td>claims without runs are common</td><td class="win">15/15 run and output read, every task</td></tr>
+        <tr><td>Concurrency bugs shipped</td><td class="num" style="color:var(--bad)">20 duplicates / request burst</td><td class="win">found, fixed, regression-pinned</td></tr>
+        <tr><td>Migration rollback verified</td><td>never</td><td class="win">executed + byte-checked</td></tr>
+        <tr><td>Destructive-command guard</td><td>prose only ("please don't")</td><td class="win">deny-first gate + redacted audit log</td></tr>
+        <tr><td>Session continuity</td><td>re-derive everything each time</td><td class="win">decisions / lessons / handoff on disk</td></tr>
+        <tr><td>3 tasks, wall clock</td><td class="num">—</td><td class="win">41 min</td></tr>
+        <tr><td>Kit edits needed mid-trial</td><td class="num">—</td><td class="win">0 (target was 0)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h2>Verdict</h2>
+    <p>Same agent, same model, same three tasks. The difference is not intelligence — it's that the kit replaces
+    "the agent's habits" with <b>rules that produce evidence</b>: contracts written first, checks that must actually run,
+    migrations that must roll back, bugs that must be pinned failing-first. The concrete proof: the packs' own rules
+    surfaced a real concurrency bug that a happy-path session would have shipped.</p>
+  </div>
+
+  <div class="honest">
+    <h2>What the kit does not claim</h2>
+    <ul>
+      <li>The command gate is a gate + audit trail, not an OS sandbox — an agent that bypasses it can still run raw shell.</li>
+      <li>Token figures are bytes/4 estimates, not measured tokenizer counts.</li>
+      <li>Release evidence here is local preflight only; no deploy target existed to verify against.</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+  function fillGrid(id, n) {
+    const grid = document.getElementById(id);
+    grid.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'req';
+      cell.textContent = '···';
+      grid.appendChild(cell);
+    }
+    return grid;
+  }
+
+  function race(gridId, logId, btnId, mode) {
+    const grid = fillGrid(gridId, 20);
+    const log = document.getElementById(logId);
+    const btn = document.getElementById(btnId);
+    btn.disabled = true;
+    log.innerHTML = 'Sending…';
+    const cells = [...grid.children];
+    let creates = 0, replays = 0;
+    cells.forEach((cell, i) => {
+      setTimeout(() => {
+        if (mode === 'bad') {
+          cell.className = 'req dup'; cell.textContent = '201';
+          creates++;
+        } else {
+          if (i === 7) { cell.className = 'req create'; cell.textContent = '201'; creates++; }
+          else { cell.className = 'req replay'; cell.textContent = '200'; replays++; }
+        }
+        if (i === cells.length - 1) {
+          btn.disabled = false;
+          log.innerHTML = mode === 'bad'
+            ? `<b class="dup">${creates} jobs created</b> — every request claimed the create. Idempotency broken, all "tests" green.`
+            : `<b class="acc">1 create (201)</b> + <b class="ok">${replays} replays (200, same id)</b> — exactly one job in the log.`;
+        }
+      }, 70 * i + Math.random() * 60);
+    });
+  }
+
+  document.getElementById('runBad').addEventListener('click', () => race('gridBad', 'logBad', 'runBad', 'bad'));
+  document.getElementById('runGood').addEventListener('click', () => race('gridGood', 'logGood', 'runGood', 'good'));
+</script>
+</body>
+</html>

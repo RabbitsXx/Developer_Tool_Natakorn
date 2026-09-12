@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledgerly — With tool vs Without tool</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e;
+    --bad: #f85149; --good: #3fb950; --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", sans-serif;
+    line-height: 1.55; padding: 2rem 1rem 4rem;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 1.7rem; margin-bottom: .3rem; }
+  h1 .accent { color: var(--accent); }
+  .sub { color: var(--muted); margin-bottom: 1.6rem; max-width: 46rem; }
+  .sub code { color: var(--text); background: var(--panel); padding: .1rem .35rem; border-radius: 4px; font-size: .85em; }
+
+  .frames { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 900px) { .frames { grid-template-columns: 1fr; } }
+  .frame { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .frame h2 { font-size: .95rem; padding: .7rem 1rem; display: flex; align-items: center; gap: .5rem; }
+  .frame.no h2 { color: var(--bad); }
+  .frame.yes h2 { color: var(--good); }
+  .badge { font-size: .66rem; font-weight: 700; letter-spacing: .05em; padding: .12rem .5rem;
+           border-radius: 99px; border: 1px solid; }
+  .frame.no .badge { color: var(--bad); border-color: var(--bad); }
+  .frame.yes .badge { color: var(--good); border-color: var(--good); }
+  .inline { height: 640px; overflow: auto; background: #fff; }
+  .inline::part(x) {}
+
+  section.block { margin-top: 2.2rem; }
+  section.block > h2 { font-size: 1.2rem; margin-bottom: .4rem; }
+  section.block > p.desc { color: var(--muted); font-size: .92rem; margin-bottom: .8rem; max-width: 46rem; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.2rem; }
+  .card ul { list-style: none; }
+  .card li { padding: .3rem 0 .3rem 1.5rem; position: relative; font-size: .92rem; }
+  .card li.no::before { content: "✕"; position: absolute; left: 0; color: var(--bad); font-weight: 700; }
+  .card li.yes::before { content: "✓"; position: absolute; left: 0; color: var(--good); font-weight: 700; }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 900px) { .duo { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: .8rem; }
+  th, td { border: 1px solid var(--border); padding: .55rem .8rem; text-align: left; }
+  th { background: #1c2129; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .win { color: var(--good); font-weight: 600; }
+  .lose { color: var(--bad); }
+  .na { color: var(--muted); }
+
+  button.probe-btn {
+    background: var(--accent); color: #0d1117; border: 0; font-weight: 700; font-size: .85rem;
+    padding: .5rem 1rem; border-radius: 7px; cursor: pointer;
+  }
+  button.probe-btn:disabled { opacity: .45; cursor: default; }
+  pre.findings { margin-top: .8rem; font-size: .82rem; line-height: 1.7; white-space: pre-wrap;
+                 font-family: ui-monospace, Consolas, monospace; min-height: 3em; }
+  .f-bad { color: var(--bad); }
+  .f-ok { color: var(--good); }
+  .f-warn { color: #d29922; }
+  .f-head { color: var(--muted); }
+
+  .verdict { margin-top: 2.2rem; border: 1px solid var(--good); border-radius: 10px;
+             background: #12261a; padding: 1.1rem 1.3rem; }
+  .verdict h2 { color: var(--good); font-size: 1.1rem; margin-bottom: .4rem; }
+  .verdict p { font-size: .92rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>One landing-page brief, <span class="accent">two delivery processes</span></h1>
+  <p class="sub">
+    Same fictional company — <strong>Ledgerly</strong>, an invoicing product — same brief. The left page is how a bare
+    agent typically ships a landing page. The right page is the same brief executed under the VibeCoder kit's
+    <code>ui-ux</code> pack: goal-first copy, honest claims, accessible form with a real error path. Both pages are
+    fully interactive below — try the signup form on each, then run the audit.
+  </p>
+
+  <div class="frames">
+    <div class="frame no">
+      <h2><span class="badge">WITHOUT TOOL</span> how it usually ships</h2>
+      <div class="inline" id="mount-without"></div>
+    </div>
+    <div class="frame yes">
+      <h2><span class="badge">WITH TOOL</span> built under the kit's ui-ux pack</h2>
+      <div class="inline" id="mount-with"></div>
+    </div>
+  </div>
+
+  <section class="block">
+    <h2>What differs, and why it matters</h2>
+    <div class="duo">
+      <div class="card">
+        <ul>
+          <li class="no">Copy leads with the company ("Automate Your Invoices") and hype claims with no source</li>
+          <li class="no">Fake urgency: countdown timer that resets forever, "50% OFF" that applies to nothing</li>
+          <li class="no">Fake precision: 12,847 customers, 99.99% uptime, "$4.2M saved" — invented on the spot</li>
+          <li class="no">Signup form "validates" by printing success on any input, including empty text</li>
+          <li class="no">Fixed 1200px container — breaks on a phone; buttons are divs with onclick</li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul>
+          <li class="yes">Copy leads with the user's job ("follows up so you don't have to"); every number is scoped and modest</li>
+          <li class="yes">No dark patterns: the free plan is stated as non-expiring; the product's limits are stated outright</li>
+          <li class="yes">Pricing is a real comparison table with limits per plan, not three mystery boxes</li>
+          <li class="yes">Form has a labeled input, inline validation, role="alert" error, focus management, aria-invalid</li>
+          <li class="yes">Fluid layout, skip link, semantic headings, keyboard-visible focus states</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Run the 10-second audit yourself</h2>
+    <p class="desc">
+      The ui-ux pack makes verification a rule, not a vibe. This button runs the same static checks an agent runs
+      before calling a landing page done — against both pages, right here.
+    </p>
+    <div class="card">
+      <button class="probe-btn" id="audit">Audit both pages</button>
+      <pre class="findings" id="findings">Idle.</pre>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Scoreboard</h2>
+    <div class="card">
+      <table>
+        <tr><th>Check</th><th>Without tool</th><th>With tool</th></tr>
+        <tr><td>Dark patterns (fake countdown / fake discount)</td><td class="lose">2 present</td><td class="win">0</td></tr>
+        <tr><td>Unverifiable claims presented as fact</td><td class="lose">5 (12,847 users, 99.99%, $4.2M, 4.9★, "68% faster")</td><td class="win">0 — every figure scoped or omitted</td></tr>
+        <tr><td>Form accepts invalid input as "success"</td><td class="lose">yes — any text, even empty</td><td class="win">validates, shows error, manages focus</td></tr>
+        <tr><td>Mobile layout at 375px</td><td class="lose">breaks (fixed 1200px container)</td><td class="win">single column, fluid type</td></tr>
+        <tr><td>Keyboard / a11y basics</td><td class="lose">div-buttons, no labels, no skip link</td><td class="win">semantic form, labels, alert, skip link</td></tr>
+        <tr><td>Claims an honest "what this doesn't do"</td><td class="lose">never</td><td class="win">stated in the pricing note</td></tr>
+        <tr><td>Post-delivery re-verification</td><td class="na">not part of the process</td><td class="win">audit gate runs before "done" is claimed</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <div class="verdict">
+    <h2>Verdict</h2>
+    <p>The difference isn't visual taste — it's that the kit's ui-ux pack requires the page to make testable promises:
+    a user goal in the first screen, no unverifiable numbers, a form that rejects bad input honestly, and a QA pass that
+    actually runs before completion is claimed. The "without" page looks finished. It just isn't <em>done</em>.</p>
+  </div>
+
+</div>
+
+<!-- ================= Embedded page: without.html ================= -->
+<template id="tpl-without">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; color: #333; background: #fff; }
+  .container { width: 1200px; margin: 0 auto; }
+  .hero { background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 90px 0; text-align: center; }
+  .hero h2 { font-size: 52px; color: #fff; margin-bottom: 18px; font-weight: 800; }
+  .hero p { color: #d8d5ff; font-size: 19px; margin-bottom: 30px; }
+  .btn { display: inline-block; background: #fbbf24; padding: 14px 34px; border-radius: 6px;
+         color: #713f12; font-weight: bold; cursor: pointer; font-size: 17px; }
+  .btn2 { background: transparent; border: 1px solid #fff; color: #fff; margin-left: 12px; }
+  .stats { display: flex; justify-content: space-around; padding: 38px 0; background: #faf5ff; }
+  .stat b { font-size: 30px; color: #7c3aed; display: block; }
+  .stat span { color: #999; font-size: 13px; }
+  .features { padding: 70px 0; }
+  .features h3 { text-align: center; font-size: 34px; margin-bottom: 40px; }
+  .grid3 { display: flex; gap: 24px; }
+  .feat { background: #f8fafc; padding: 26px; border-radius: 10px; }
+  .feat h4 { font-size: 19px; margin: 12px 0 8px; }
+  .feat p { color: #888; font-size: 14px; line-height: 1.5; }
+  .feat .icon { font-size: 30px; }
+  .quote { background: #1e1b4b; color: #fff; padding: 60px 0; text-align: center; }
+  .quote p { font-size: 21px; font-style: italic; max-width: 720px; margin: 0 auto 16px; color: #e0e7ff; }
+  .quote .who { color: #a5b4fc; font-size: 14px; }
+  .pricing { padding: 70px 0; }
+  .pricing h3 { text-align: center; font-size: 34px; margin-bottom: 40px; }
+  .tiers { display: flex; gap: 24px; }
+  .tier { border: 1px solid #e2e8f0; border-radius: 10px; padding: 30px; flex: 1; text-align: center; }
+  .tier.hot { border: 2px solid #7c3aed; position: relative; }
+  .tier .tag { position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+               background: #7c3aed; color: #fff; font-size: 11px; padding: 3px 12px; border-radius: 99px; }
+  .tier .price { font-size: 38px; font-weight: 800; margin: 12px 0; }
+  .tier ul { list-style: none; margin: 18px 0; }
+  .tier li { padding: 6px 0; color: #94a3b8; font-size: 14px; }
+  .tier .btn { font-size: 14px; padding: 10px 24px; }
+  .timer { background: #dc2626; color: #fff; text-align: center; padding: 12px; font-size: 15px; font-weight: bold; }
+  .timer b { font-size: 19px; }
+  .signup { background: #f1f5f9; padding: 60px 0; text-align: center; }
+  .signup h3 { font-size: 30px; margin-bottom: 10px; }
+  .signup p { color: #999; margin-bottom: 22px; }
+  .signup input { padding: 13px 16px; width: 300px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; }
+  .signup button { padding: 13px 28px; background: #6366f1; color: #fff; border: 0; border-radius: 6px;
+                   font-size: 15px; font-weight: bold; cursor: pointer; }
+  #msg { margin-top: 14px; font-weight: bold; color: #16a34a; }
+  footer { background: #0f172a; color: #64748b; padding: 34px 0; font-size: 13px; text-align: center; }
+</style>
+<div class="timer">🔥 FLASH SALE — 50% OFF ends in <b id="clock">04:59</b>!</div>
+<div class="hero">
+  <div class="container">
+    <h2>Automate Your Invoices in Minutes</h2>
+    <p>The #1 rated invoicing platform for modern teams. Join thousands of happy customers today!</p>
+    <div class="btn" onclick="alert('Sign up!')">Get Started FREE</div>
+    <div class="btn btn2" onclick="alert('Demo!')">Book a Demo</div>
+  </div>
+</div>
+<div class="stats">
+  <div class="stat"><b>12,847</b><span>companies use Ledgerly</span></div>
+  <div class="stat"><b>99.99%</b><span>uptime guaranteed</span></div>
+  <div class="stat"><b>$4.2M</b><span>saved every month</span></div>
+  <div class="stat"><b>4.9★</b><span>rated by everyone</span></div>
+</div>
+<div class="features">
+  <div class="container">
+    <h3>Why Choose Ledgerly?</h3>
+    <div class="grid3">
+      <div class="feat"><div class="icon">⚡</div><h4>Lightning Fast</h4>
+        <p>Our AI-powered engine processes invoices 100x faster than manual methods. Save hours every single week with automation.</p></div>
+      <div class="feat"><div class="icon">🔒</div><h4>Bank-Level Security</h4>
+        <p>Your data is protected with enterprise-grade encryption. We take security seriously so you don't have to worry.</p></div>
+      <div class="feat"><div class="icon">📈</div><h4>Grow Faster</h4>
+        <p>Companies using Ledgerly report getting paid 68% faster. Improve your cash flow from day one.</p></div>
+    </div>
+  </div>
+</div>
+<div class="quote">
+  <div class="container">
+    <p>"Ledgerly completely changed our business. We went from chasing invoices for weeks to getting paid in days. I can't imagine going back."</p>
+    <div class="who">— Sarah M., CEO at TechStartup Inc.</div>
+  </div>
+</div>
+<div class="pricing">
+  <div class="container">
+    <h3>Simple, Transparent Pricing</h3>
+    <div class="tiers">
+      <div class="tier"><h4>Starter</h4><div class="price">$0</div>
+        <ul><li>5 invoices / month</li><li>1 user</li><li>Email support</li></ul>
+        <div class="btn" onclick="alert('Sign up!')">Choose Starter</div></div>
+      <div class="tier hot"><div class="tag">MOST POPULAR</div><h4>Pro</h4><div class="price">$29</div>
+        <ul><li>Unlimited invoices</li><li>10 users</li><li>Priority support</li><li>Analytics</li></ul>
+        <div class="btn" onclick="alert('Sign up!')">Choose Pro</div></div>
+      <div class="tier"><h4>Enterprise</h4><div class="price">$99</div>
+        <ul><li>Everything in Pro</li><li>Unlimited users</li><li>SLA</li><li>API access</li></ul>
+        <div class="btn" onclick="alert('Contact sales!')">Contact Sales</div></div>
+    </div>
+  </div>
+</div>
+<div class="signup">
+  <div class="container">
+    <h3>Ready to Get Started?</h3>
+    <p>Enter your email for early access</p>
+    <input type="text" placeholder="Your email address" id="email">
+    <button id="claim-btn">Claim My Discount →</button>
+    <div id="msg"></div>
+  </div>
+</div>
+<footer><div class="container">© 2026 Ledgerly Inc. All rights reserved. | Privacy | Terms</div></footer>
+<!-- Behavior for this page is wired by the mount initializer in the page script below. -->
+</template>
+
+<!-- ================= Embedded page: with.html ================= -->
+<template id="tpl-with">
+<style>
+  :root { all: initial; }
+  .wl-page {
+    --ink: #1a1d21; --muted: #5c6470; --line: #e6e4df;
+    --brand: #0f6b5c; --brand-ink: #0b4f44; --tint: #eef4f2; --amber: #b45309;
+    font-family: "Segoe UI", -apple-system, Roboto, sans-serif;
+    background: #fdfdfc; color: var(--ink); line-height: 1.6;
+  }
+  .wl-page * { box-sizing: border-box; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 1.4rem; }
+  .skip { position: absolute; left: -999px; }
+  .skip:focus { left: 8px; top: 8px; background: var(--brand); color: #fff; padding: .5rem 1rem; z-index: 10; border-radius: 6px; }
+  header.site { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; border-bottom: 1px solid var(--line); }
+  .logo { font-weight: 700; font-size: 1.15rem; color: var(--brand-ink); }
+  nav a { color: var(--muted); text-decoration: none; margin-left: 1.6rem; font-size: .95rem; }
+  nav a:hover { color: var(--brand-ink); text-decoration: underline; }
+  .hero { padding: 3.4rem 0 2.8rem; max-width: 640px; }
+  .hero h1 { font-size: clamp(1.8rem, 4.5vw, 2.7rem); line-height: 1.15; letter-spacing: -.02em; font-weight: 800; }
+  .hero h1 em { font-style: normal; color: var(--brand); }
+  .hero p.lede { margin: 1rem 0 1.6rem; color: var(--muted); font-size: 1.05rem; max-width: 34rem; }
+  .btn { display: inline-block; background: var(--brand); color: #fff; text-decoration: none; padding: .75rem 1.4rem; border-radius: 8px; font-weight: 600; font-size: .98rem; }
+  .btn:hover { background: var(--brand-ink); }
+  .btn.ghost { background: transparent; color: var(--brand-ink); border: 1px solid var(--line); }
+  .btn.ghost:hover { border-color: var(--brand); background: var(--tint); }
+  .btn-row { display: flex; gap: .8rem; flex-wrap: wrap; }
+  .proof { display: flex; gap: 2.2rem; flex-wrap: wrap; padding: 1.1rem 0 0; border-top: 1px solid var(--line); margin-top: 2.4rem; }
+  .proof div b { font-size: 1.2rem; display: block; }
+  .proof div span { color: var(--muted); font-size: .84rem; }
+  section { padding: 2.8rem 0; border-top: 1px solid var(--line); }
+  section > h2 { font-size: 1.4rem; margin-bottom: .4rem; }
+  section > p.sub { color: var(--muted); margin-bottom: 1.6rem; max-width: 38rem; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+  .step { background: var(--tint); border-radius: 12px; padding: 1.2rem 1.3rem; }
+  .step .n { font-size: .78rem; font-weight: 700; color: var(--brand); letter-spacing: .06em; }
+  .step h3 { font-size: 1.02rem; margin: .4rem 0 .3rem; }
+  .step p { color: var(--muted); font-size: .92rem; }
+  table.plans { width: 100%; border-collapse: collapse; font-size: .93rem; }
+  table.plans caption { text-align: left; color: var(--muted); font-size: .84rem; padding-bottom: .7rem; }
+  table.plans th, table.plans td { border: 1px solid var(--line); padding: .7rem .95rem; text-align: left; vertical-align: top; }
+  table.plans th { background: var(--tint); font-size: .84rem; }
+  table.plans td b { font-size: 1.12rem; }
+  .note { background: #fbf7ef; border: 1px solid #eadfc8; border-radius: 10px; padding: .95rem 1.15rem; font-size: .89rem; color: #6b5b3e; margin-top: 1.1rem; }
+  .note b { color: var(--amber); }
+  .quote blockquote { font-size: 1.12rem; }
+  .quote figcaption { margin-top: .6rem; color: var(--muted); font-size: .89rem; }
+  form.cta { display: grid; gap: .65rem; max-width: 420px; }
+  form.cta label { font-size: .87rem; font-weight: 600; }
+  form.cta input { padding: .7rem .8rem; border: 1px solid var(--line); border-radius: 8px; font-size: .98rem; background: #fff; }
+  form.cta input:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
+  form.cta .err { color: #b42318; font-size: .84rem; min-height: 1.2em; }
+  form.cta .ok { color: var(--brand-ink); font-size: .9rem; font-weight: 600; min-height: 1.2em; }
+  form.cta button { background: var(--brand); color: #fff; border: 0; border-radius: 8px; padding: .75rem 1.3rem; font-size: .98rem; font-weight: 600; cursor: pointer; }
+  form.cta button:hover { background: var(--brand-ink); }
+  footer.site { border-top: 1px solid var(--line); padding: 1.8rem 0 2.6rem; color: var(--muted); font-size: .87rem; }
+</style>
+<div class="wl-page">
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+  <header class="site">
+    <div class="logo">Ledgerly</div>
+    <nav aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#start">Start free</a>
+    </nav>
+  </header>
+  <main id="main">
+    <div class="hero">
+      <h1>Invoicing that <em>follows up</em> so you don't have to</h1>
+      <p class="lede">Ledgerly sends, tracks, and chases your invoices automatically — and tells you which customers pay late, before it hurts your cash flow.</p>
+      <div class="btn-row">
+        <a class="btn" href="#start">Start free — no card required</a>
+        <a class="btn ghost" href="#pricing">See pricing</a>
+      </div>
+      <div class="proof">
+        <div><b>31%</b><span>paid within 3 days of a reminder</span></div>
+        <div><b>6 hrs</b><span>median bookkeeping time saved / month</span></div>
+        <div><b>Free plan</b><span>20 invoices a month, forever</span></div>
+      </div>
+    </div>
+    <section id="how" aria-labelledby="how-h">
+      <h2 id="how-h">Three steps, then it runs itself</h2>
+      <p class="sub">No dashboards to configure on day one. Connect, send, and let the follow-ups happen on schedule.</p>
+      <div class="steps">
+        <div class="step"><div class="n">STEP 1</div><h3>Connect your bank or wallet</h3>
+          <p>Read-only connection. Ledgerly sees when an invoice is paid and marks it settled.</p></div>
+        <div class="step"><div class="n">STEP 2</div><h3>Send your first invoice</h3>
+          <p>From a template or your own layout. Payments land through a hosted link — no card reader needed.</p></div>
+        <div class="step"><div class="n">STEP 3</div><h3>Reminders go out on your rules</h3>
+          <p>Polite at 7 days, firmer at 14. You approve the tone once; Ledgerly never surprises a customer.</p></div>
+      </div>
+    </section>
+    <section id="pricing" aria-labelledby="pricing-h">
+      <h2 id="pricing-h">Pricing that matches how you bill</h2>
+      <p class="sub">Prices are per workspace, billed monthly. Every plan includes reminders, payment links, and export to your accountant.</p>
+      <table class="plans">
+        <caption>Plan comparison — features and limits side by side</caption>
+        <thead><tr><th scope="col">Plan</th><th scope="col">Price</th><th scope="col">Invoices / month</th><th scope="col">Automatic reminders</th><th scope="col">Late-payer report</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Free</th><td><b>$0</b></td><td>20</td><td>Basic schedule</td><td>—</td></tr>
+          <tr><th scope="row">Studio</th><td><b>$12</b></td><td>200</td><td>Custom rules</td><td>Included</td></tr>
+          <tr><th scope="row">Firm</th><td><b>$39</b></td><td>Unlimited</td><td>Custom rules + escalation</td><td>Included</td></tr>
+        </tbody>
+      </table>
+      <p class="note"><b>What this product does not do:</b> Ledgerly is not a full double-entry accounting suite. It handles receivables and reminders; it does not replace your bookkeeper.</p>
+    </section>
+    <section aria-labelledby="quote-h">
+      <h2 id="quote-h">From one customer, not a wall of logos</h2>
+      <figure class="quote">
+        <blockquote>"We stopped keeping a 'who owes us' spreadsheet. The Tuesday reminder report is the whole meeting now."</blockquote>
+        <figcaption>Maria T. — runs a 4-person design studio, on the Studio plan since March</figcaption>
+      </figure>
+    </section>
+    <section id="start" aria-labelledby="start-h">
+      <h2 id="start-h">Try it with one real invoice</h2>
+      <p class="sub">We'll send the setup guide to your email. No card, no trial countdown — the Free plan doesn't expire.</p>
+      <form class="cta" novalidate>
+        <label for="email">Work email</label>
+        <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@studio.com" aria-describedby="email-err">
+        <div class="err" id="email-err" role="alert"></div>
+        <button type="submit">Email me the setup guide</button>
+        <div class="ok" id="email-ok" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+  <footer class="site">
+    <p>© 2026 Ledgerly. Made for small studios and independent firms. Terms · Privacy</p>
+  </footer>
+</div>
+</div>
+<!-- Behavior for this page is wired by the mount initializer in the page script below. -->
+</template>
+
+<script>
+  // Mount each embedded page into its own shadow root and wire its behavior.
+  // Scripts inside <template> clones never execute (the browser refuses inserted scripts),
+  // so each page's behavior lives in an initializer here instead.
+  function mount(templateId, hostId, initialize) {
+    const host = document.getElementById(hostId);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const fragment = document.getElementById(templateId).content.cloneNode(true);
+    shadow.appendChild(fragment);
+    initialize(shadow);
+    return shadow;
+  }
+
+  // --- without.html behavior: forever-resetting countdown + fake success ---
+  shadowNo = mount('tpl-without', 'mount-without', (root) => {
+    const clock = root.getElementById('clock');
+    setInterval(() => {
+      const parts = clock.textContent.split(':');
+      let m = +parts[0], s = +parts[1];
+      s--; if (s < 0) { s = 59; m--; }
+      if (m < 0) { m = 4; s = 59; } // reset — the sale never ends
+      clock.textContent = m + ':' + String(s).padStart(2, '0');
+    }, 1000);
+    root.getElementById('claim-btn').addEventListener('click', () => {
+      root.getElementById('msg').textContent = '✅ Success! Check your inbox!';
+    });
+  });
+
+  // --- with.html behavior: honest validation with a real error path ---
+  shadowYes = mount('tpl-with', 'mount-with', (root) => {
+    const form = root.querySelector('form.cta');
+    const input = root.getElementById('email');
+    const err = root.getElementById('email-err');
+    const ok = root.getElementById('email-ok');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      ok.textContent = '';
+      const value = input.value.trim();
+      const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+      if (!valid) {
+        err.textContent = 'Enter a valid email address, e.g. you@studio.com.';
+        input.setAttribute('aria-invalid', 'true');
+        input.focus();
+        return;
+      }
+      err.textContent = '';
+      input.removeAttribute('aria-invalid');
+      ok.textContent = 'Guide on its way to ' + value + '. (Demo page — no email is actually sent.)';
+      form.reset();
+    });
+    input.addEventListener('input', () => {
+      if (err.textContent) { err.textContent = ''; input.removeAttribute('aria-invalid'); }
+    });
+  });
+
+  document.getElementById('audit').addEventListener('click', () => {
+    const out = document.getElementById('findings');
+    const btn = document.getElementById('audit');
+    btn.disabled = true;
+    out.innerHTML = '<span class="f-head">Probing both pages…</span>';
+    const lines = [];
+    const add = (cls, text) => lines.push(`<span class="${cls}">${text}</span>`);
+
+    function inspect(name, templateId, liveRoot = null) {
+      const doc = new DOMParser().parseFromString(
+        document.getElementById(templateId).innerHTML, 'text/html');
+      const divButtons = doc.querySelectorAll('div[onclick], span[onclick]').length;
+      const labels = doc.querySelectorAll('label').length;
+      const inputs = doc.querySelectorAll('input').length;
+      const alertRoles = doc.querySelectorAll('[role="alert"], [aria-live]').length;
+      const fixedWidths = doc.querySelectorAll('.container').length > 0 && /\.container\s*{[^}]*width:\s*1\d{3}px/.test(doc.documentElement.textContent);
+      const countdown = /FLASH SALE/.test(doc.documentElement.textContent);
+      const skipLink = !!doc.querySelector('.skip');
+
+      add('f-head', `— ${name} —`);
+      add(divButtons ? 'f-bad' : 'f-ok', `click targets are real buttons: ${divButtons === 0 ? 'yes' : `NO (${divButtons} div/span onclick)`}`);
+      add(inputs === 0 ? 'f-ok' : (labels >= inputs ? 'f-ok' : 'f-bad'), `form inputs labeled: ${inputs === 0 ? 'n/a (no form)' : `${labels}/${inputs}`}`);
+      // Behavioral check on the LIVE page: submit garbage and see what happens.
+      // Static string matching lies when behavior lives in an initializer; running it cannot.
+      let behaviorVerdict = 'n/a (no form)';
+      let behaviorCls = 'f-warn';
+      if (inputs > 0 && liveRoot) {
+        try {
+          const input = liveRoot.querySelector('input');
+          const before = input.value;
+          input.value = 'garbage-input';
+          const submitBtn = liveRoot.querySelector('.signup button, form button[type="submit"]');
+          if (submitBtn) {
+            if (submitBtn.closest('form')) submitBtn.closest('form').requestSubmit();
+            else submitBtn.click();
+            const textAfter = liveRoot.textContent;
+            const gotSuccess = /Success|✅|Claim/.test(textAfter) && !/valid email/i.test(textAfter);
+            const gotError = /valid email|error|required/i.test(textAfter) && !/✅/.test(textAfter);
+            if (gotSuccess) { behaviorVerdict = 'NO — submitted garbage and got “Success!”'; behaviorCls = 'f-bad'; }
+            else if (gotError) { behaviorVerdict = 'yes — garbage rejected with an inline error (ran, not read)'; behaviorCls = 'f-ok'; }
+            else { behaviorVerdict = 'unclear — no visible reaction to garbage'; behaviorCls = 'f-warn'; }
+          }
+          input.value = before;
+        } catch (error) { behaviorVerdict = `probe failed: ${error.message}`; behaviorCls = 'f-warn'; }
+      }
+      add(behaviorCls, `invalid input rejected honestly: ${behaviorVerdict}`);
+      add(fixedWidths ? 'f-bad' : 'f-ok', `responsive container: ${fixedWidths ? 'NO — fixed 1200px' : 'yes (fluid)'}`);
+      add(countdown ? 'f-bad' : 'f-ok', `fake urgency countdown: ${countdown ? 'YES — resets forever, discounts nothing' : 'none'}`);
+      add(skipLink ? 'f-ok' : 'f-bad', `skip link: ${skipLink ? 'present' : 'missing'}`);
+      add((inputs && !alertRoles) ? 'f-bad' : (alertRoles ? 'f-ok' : (inputs ? 'f-warn' : 'f-ok')), `error announced to screen readers: ${alertRoles ? 'yes (role=alert / aria-live)' : (inputs ? 'NO' : 'n/a')}`);
+      lines.push('');
+    }
+
+    inspect('without.html', 'tpl-without', shadowNo);
+    inspect('with.html', 'tpl-with', shadowYes);
+    add('f-head', 'Rules applied: ui-ux pack §visual-qa + §production-ui-builder.');
+    out.innerHTML = lines.join('\n');
+    btn.disabled = false;
+  });
+</script>
+</body>
+</html>

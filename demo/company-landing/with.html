@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledgerly — Invoicing that follows up for you</title>
+<style>
+  :root {
+    --bg: #fdfdfc; --ink: #1a1d21; --muted: #5c6470; --line: #e6e4df;
+    --brand: #0f6b5c; --brand-ink: #0b4f44; --tint: #eef4f2; --amber: #b45309;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", -apple-system, Roboto, "Noto Sans Thai", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.6;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 1.4rem; }
+
+  .skip { position: absolute; left: -999px; }
+  .skip:focus { left: 8px; top: 8px; background: var(--brand); color: #fff; padding: .5rem 1rem; z-index: 10; border-radius: 6px; }
+
+  header.site {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 0; border-bottom: 1px solid var(--line);
+  }
+  .logo { font-weight: 700; font-size: 1.15rem; color: var(--brand-ink); letter-spacing: -.01em; }
+  nav a { color: var(--muted); text-decoration: none; margin-left: 1.6rem; font-size: .95rem; }
+  nav a:hover, nav a:focus { color: var(--brand-ink); text-decoration: underline; }
+
+  .hero { padding: 4.2rem 0 3.4rem; max-width: 640px; }
+  .hero h1 { font-size: clamp(1.9rem, 4.5vw, 2.9rem); line-height: 1.15; letter-spacing: -.02em; font-weight: 800; }
+  .hero h1 em { font-style: normal; color: var(--brand); }
+  .hero p.lede { margin: 1.1rem 0 1.7rem; color: var(--muted); font-size: 1.08rem; max-width: 34rem; }
+
+  .btn {
+    display: inline-block; background: var(--brand); color: #fff; text-decoration: none;
+    padding: .78rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 1rem;
+  }
+  .btn:hover { background: var(--brand-ink); }
+  .btn.ghost { background: transparent; color: var(--brand-ink); border: 1px solid var(--line); }
+  .btn.ghost:hover { border-color: var(--brand); background: var(--tint); }
+  .btn-row { display: flex; gap: .8rem; flex-wrap: wrap; }
+
+  .proof {
+    display: flex; gap: 2.4rem; flex-wrap: wrap; padding: 1.2rem 0 0;
+    border-top: 1px solid var(--line); margin-top: 2.6rem;
+  }
+  .proof div b { font-size: 1.25rem; display: block; color: var(--ink); }
+  .proof div span { color: var(--muted); font-size: .85rem; }
+
+  section { padding: 3.4rem 0; border-top: 1px solid var(--line); }
+  section > h2 { font-size: 1.5rem; letter-spacing: -.01em; margin-bottom: .4rem; }
+  section > p.sub { color: var(--muted); margin-bottom: 1.8rem; max-width: 38rem; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+  .step { background: var(--tint); border-radius: 12px; padding: 1.3rem 1.4rem; }
+  .step .n { font-size: .8rem; font-weight: 700; color: var(--brand); letter-spacing: .06em; }
+  .step h3 { font-size: 1.05rem; margin: .45rem 0 .3rem; }
+  .step p { color: var(--muted); font-size: .93rem; }
+
+  table.plans { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  table.plans caption { text-align: left; color: var(--muted); font-size: .85rem; padding-bottom: .8rem; }
+  table.plans th, table.plans td { border: 1px solid var(--line); padding: .75rem 1rem; text-align: left; vertical-align: top; }
+  table.plans th { background: var(--tint); font-size: .85rem; }
+  table.plans td b { font-size: 1.15rem; }
+
+  .note { background: #fbf7ef; border: 1px solid #eadfc8; border-radius: 10px; padding: 1rem 1.2rem; font-size: .9rem; color: #6b5b3e; margin-top: 1.2rem; }
+  .note b { color: var(--amber); }
+
+  .quote { max-width: 620px; }
+  .quote blockquote { font-size: 1.15rem; color: var(--ink); }
+  .quote figcaption { margin-top: .7rem; color: var(--muted); font-size: .9rem; }
+
+  form.cta { display: grid; gap: .7rem; max-width: 420px; }
+  form.cta label { font-size: .88rem; font-weight: 600; }
+  form.cta input {
+    padding: .72rem .85rem; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 1rem; background: #fff;
+  }
+  form.cta input:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
+  form.cta .err { color: #b42318; font-size: .85rem; min-height: 1.2em; }
+  form.cta .ok { color: var(--brand-ink); font-size: .92rem; font-weight: 600; min-height: 1.2em; }
+  form.cta button {
+    background: var(--brand); color: #fff; border: 0; border-radius: 8px;
+    padding: .78rem 1.4rem; font-size: 1rem; font-weight: 600; cursor: pointer;
+  }
+  form.cta button:hover { background: var(--brand-ink); }
+
+  footer.site { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--muted); font-size: .88rem; }
+  footer.site a { color: var(--muted); }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="wrap">
+  <header class="site">
+    <div class="logo">Ledgerly</div>
+    <nav aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#start">Start free</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="hero">
+      <h1>Invoicing that <em>follows up</em> so you don't have to</h1>
+      <p class="lede">Ledgerly sends, tracks, and chases your invoices automatically — and tells you which customers pay late, before it hurts your cash flow.</p>
+      <div class="btn-row">
+        <a class="btn" href="#start">Start free — no card required</a>
+        <a class="btn ghost" href="#pricing">See pricing</a>
+      </div>
+      <div class="proof">
+        <div><b>31%</b><span>paid within 3 days of a reminder</span></div>
+        <div><b>6 hrs</b><span>median bookkeeping time saved / month</span></div>
+        <div><b>Free plan</b><span>20 invoices a month, forever</span></div>
+      </div>
+    </div>
+
+    <section id="how" aria-labelledby="how-h">
+      <h2 id="how-h">Three steps, then it runs itself</h2>
+      <p class="sub">No dashboards to configure on day one. Connect, send, and let the follow-ups happen on schedule.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="n">STEP 1</div>
+          <h3>Connect your bank or wallet</h3>
+          <p>Read-only connection. Ledgerly sees when an invoice is paid and marks it settled.</p>
+        </div>
+        <div class="step">
+          <div class="n">STEP 2</div>
+          <h3>Send your first invoice</h3>
+          <p>From a template or your own layout. Payments land through a hosted link — no card reader needed.</p>
+        </div>
+        <div class="step">
+          <div class="n">STEP 3</div>
+          <h3>Reminders go out on your rules</h3>
+          <p>Polite at 7 days, firmer at 14. You approve the tone once; Ledgerly never surprises a customer.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" aria-labelledby="pricing-h">
+      <h2 id="pricing-h">Pricing that matches how you bill</h2>
+      <p class="sub">Prices are per workspace, billed monthly. Every plan includes reminders, payment links, and export to your accountant.</p>
+      <table class="plans">
+        <caption>Plan comparison — features and limits side by side</caption>
+        <thead>
+          <tr><th scope="col">Plan</th><th scope="col">Price</th><th scope="col">Invoices / month</th><th scope="col">Automatic reminders</th><th scope="col">Late-payer report</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Free</th><td><b>$0</b></td><td>20</td><td>Basic schedule</td><td>—</td></tr>
+          <tr><th scope="row">Studio</th><td><b>$12</b></td><td>200</td><td>Custom rules</td><td>Included</td></tr>
+          <tr><th scope="row">Firm</th><td><b>$39</b></td><td>Unlimited</td><td>Custom rules + escalation</td><td>Included</td></tr>
+        </tbody>
+      </table>
+      <p class="note"><b>What this product does not do:</b> Ledgerly is not a full double-entry accounting suite. It handles receivables and reminders; it does not replace your bookkeeper.</p>
+    </section>
+
+    <section aria-labelledby="quote-h">
+      <h2 id="quote-h" class="quote">From one customer, not a wall of logos</h2>
+      <figure class="quote">
+        <blockquote>"We stopped keeping a 'who owes us' spreadsheet. The Tuesday reminder report is the whole meeting now."</blockquote>
+        <figcaption>Maria T. — runs a 4-person design studio, on the Studio plan since March</figcaption>
+      </figure>
+    </section>
+
+    <section id="start" aria-labelledby="start-h">
+      <h2 id="start-h">Try it with one real invoice</h2>
+      <p class="sub">We'll send the setup guide to your email. No card, no trial countdown — the Free plan doesn't expire.</p>
+      <form class="cta" novalidate>
+        <label for="email">Work email</label>
+        <input id="email" name="email" type="email" autocomplete="email" required
+               placeholder="you@studio.com" aria-describedby="email-err">
+        <div class="err" id="email-err" role="alert"></div>
+        <button type="submit">Email me the setup guide</button>
+        <div class="ok" id="email-ok" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site">
+    <p>© 2026 Ledgerly. Made for small studios and independent firms. <a href="#start">Start free</a> · Terms · Privacy</p>
+  </footer>
+</div>
+
+<script>
+  // Honest client-side validation with a real error path (server check happens in production;
+  // this static demo accepts the address locally and says so).
+  const form = document.querySelector('form.cta');
+  const input = document.getElementById('email');
+  const err = document.getElementById('email-err');
+  const ok = document.getElementById('email-ok');
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    ok.textContent = '';
+    const value = input.value.trim();
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+    if (!valid) {
+      err.textContent = 'Enter a valid email address, e.g. you@studio.com.';
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
+      return;
+    }
+    err.textContent = '';
+    input.removeAttribute('aria-invalid');
+    ok.textContent = `Guide on its way to ${value}. (Demo page — no email is actually sent.)`;
+    form.reset();
+  });
+
+  input.addEventListener('input', () => {
+    if (err.textContent) { err.textContent = ''; input.removeAttribute('aria-invalid'); }
+  });
+</script>
+</body>
+</html>

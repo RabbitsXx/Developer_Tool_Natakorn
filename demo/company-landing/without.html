@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledgerly — Automate Your Invoices Today</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; color: #333; }
+  .container { width: 1200px; margin: 0 auto; }
+
+  /* hero */
+  .hero { background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 90px 0; text-align: center; }
+  .hero h2 { font-size: 52px; color: #fff; margin-bottom: 18px; font-weight: 800; }
+  .hero p { color: #d8d5ff; font-size: 19px; margin-bottom: 30px; }
+  .btn { display: inline-block; background: #fbbf24; padding: 14px 34px; border-radius: 6px;
+         color: #713f12; font-weight: bold; cursor: pointer; font-size: 17px; }
+  .btn2 { background: transparent; border: 1px solid #fff; color: #fff; margin-left: 12px; }
+
+  /* stats bar */
+  .stats { display: flex; justify-content: space-around; padding: 38px 0; background: #faf5ff; }
+  .stat b { font-size: 30px; color: #7c3aed; display: block; }
+  .stat span { color: #999; font-size: 13px; }
+
+  /* features */
+  .features { padding: 70px 0; }
+  .features h3 { text-align: center; font-size: 34px; margin-bottom: 40px; }
+  .grid3 { display: flex; gap: 24px; }
+  .feat { background: #f8fafc; padding: 26px; border-radius: 10px; }
+  .feat h4 { font-size: 19px; margin: 12px 0 8px; }
+  .feat p { color: #888; font-size: 14px; line-height: 1.5; }
+  .feat .icon { font-size: 30px; }
+
+  /* testimonial */
+  .quote { background: #1e1b4b; color: #fff; padding: 60px 0; text-align: center; }
+  .quote p { font-size: 21px; font-style: italic; max-width: 720px; margin: 0 auto 16px; color: #e0e7ff; }
+  .quote .who { color: #a5b4fc; font-size: 14px; }
+
+  /* pricing */
+  .pricing { padding: 70px 0; }
+  .pricing h3 { text-align: center; font-size: 34px; margin-bottom: 40px; }
+  .tiers { display: flex; gap: 24px; }
+  .tier { border: 1px solid #e2e8f0; border-radius: 10px; padding: 30px; flex: 1; text-align: center; }
+  .tier.hot { border: 2px solid #7c3aed; position: relative; }
+  .tier .tag { position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+               background: #7c3aed; color: #fff; font-size: 11px; padding: 3px 12px; border-radius: 99px; }
+  .tier .price { font-size: 38px; font-weight: 800; margin: 12px 0; }
+  .tier ul { list-style: none; margin: 18px 0; }
+  .tier li { padding: 6px 0; color: #94a3b8; font-size: 14px; }
+  .tier .btn { font-size: 14px; padding: 10px 24px; }
+
+  /* urgency */
+  .timer { background: #dc2626; color: #fff; text-align: center; padding: 12px; font-size: 15px; font-weight: bold; }
+  .timer b { font-size: 19px; }
+
+  /* signup */
+  .signup { background: #f1f5f9; padding: 60px 0; text-align: center; }
+  .signup h3 { font-size: 30px; margin-bottom: 10px; }
+  .signup p { color: #999; margin-bottom: 22px; }
+  .signup input { padding: 13px 16px; width: 300px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; }
+  .signup button { padding: 13px 28px; background: #6366f1; color: #fff; border: 0; border-radius: 6px;
+                   font-size: 15px; font-weight: bold; cursor: pointer; }
+  #msg { margin-top: 14px; font-weight: bold; color: #16a34a; }
+
+  footer { background: #0f172a; color: #64748b; padding: 34px 0; font-size: 13px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="timer">🔥 FLASH SALE — 50% OFF ends in <b id="clock">04:59</b>!</div>
+
+<div class="hero">
+  <div class="container">
+    <h2>Automate Your Invoices in Minutes</h2>
+    <p>The #1 rated invoicing platform for modern teams. Join thousands of happy customers today!</p>
+    <div class="btn" onclick="alert('Sign up!')">Get Started FREE</div>
+    <div class="btn btn2" onclick="alert('Demo!')">Book a Demo</div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>12,847</b><span>companies use Ledgerly</span></div>
+  <div class="stat"><b>99.99%</b><span>uptime guaranteed</span></div>
+  <div class="stat"><b>$4.2M</b><span>saved every month</span></div>
+  <div class="stat"><b>4.9★</b><span>rated by everyone</span></div>
+</div>
+
+<div class="features">
+  <div class="container">
+    <h3>Why Choose Ledgerly?</h3>
+    <div class="grid3">
+      <div class="feat">
+        <div class="icon">⚡</div>
+        <h4>Lightning Fast</h4>
+        <p>Our AI-powered engine processes invoices 100x faster than manual methods. Save hours every single week with automation.</p>
+      </div>
+      <div class="feat">
+        <div class="icon">🔒</div>
+        <h4>Bank-Level Security</h4>
+        <p>Your data is protected with enterprise-grade encryption. We take security seriously so you don't have to worry.</p>
+      </div>
+      <div class="feat">
+        <div class="icon">📈</div>
+        <h4>Grow Faster</h4>
+        <p>Companies using Ledgerly report getting paid 68% faster. Improve your cash flow from day one.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="quote">
+  <div class="container">
+    <p>"Ledgerly completely changed our business. We went from chasing invoices for weeks to getting paid in days. I can't imagine going back."</p>
+    <div class="who">— Sarah M., CEO at TechStartup Inc.</div>
+  </div>
+</div>
+
+<div class="pricing">
+  <div class="container">
+    <h3>Simple, Transparent Pricing</h3>
+    <div class="tiers">
+      <div class="tier">
+        <h4>Starter</h4>
+        <div class="price">$0</div>
+        <ul><li>5 invoices / month</li><li>1 user</li><li>Email support</li></ul>
+        <div class="btn" onclick="alert('Sign up!')">Choose Starter</div>
+      </div>
+      <div class="tier hot">
+        <div class="tag">MOST POPULAR</div>
+        <h4>Pro</h4>
+        <div class="price">$29</div>
+        <ul><li>Unlimited invoices</li><li>10 users</li><li>Priority support</li><li>Analytics</li></ul>
+        <div class="btn" onclick="alert('Sign up!')">Choose Pro</div>
+      </div>
+      <div class="tier">
+        <h4>Enterprise</h4>
+        <div class="price">$99</div>
+        <ul><li>Everything in Pro</li><li>Unlimited users</li><li>SLA</li><li>API access</li></ul>
+        <div class="btn" onclick="alert('Contact sales!')">Contact Sales</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="signup">
+  <div class="container">
+    <h3>Ready to Get Started?</h3>
+    <p>Enter your email for early access</p>
+    <input type="text" placeholder="Your email address" id="email">
+    <button onclick="submitForm()">Claim My Discount →</button>
+    <div id="msg"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">© 2026 Ledgerly Inc. All rights reserved. | Privacy | Terms</div>
+</footer>
+
+<script>
+  // countdown that never actually ends
+  setInterval(() => {
+    const el = document.getElementById('clock');
+    let m = 4, s = 59;
+    const parts = el.textContent.split(':');
+    m = +parts[0]; s = +parts[1];
+    s--;
+    if (s < 0) { s = 59; m--; }
+    if (m < 0) { m = 4; s = 59; } // reset — the sale never ends
+    el.textContent = m + ':' + String(s).padStart(2, '0');
+  }, 1000);
+
+  // "validation"
+  function submitForm() {
+    document.getElementById('msg').textContent = '✅ Success! Check your inbox!';
+  }
+</script>
+</body>
+</html>
