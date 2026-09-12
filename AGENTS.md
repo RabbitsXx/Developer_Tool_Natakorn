@@ -29,19 +29,30 @@ Read `docs/BOOTSTRAP_PROTOCOL.md` before changing bootstrap/state behavior. A va
 
 ## Skill pack activation
 
-Skill packs live in `.ai-kit/skills/<pack>/SKILL.md` and follow the open Agent Skills format. Read only the pack that matches the task, then open only the reference files that pack maps to.
+Skill packs live in `.ai-kit/skills/<pack>/` and follow the open Agent Skills format: a `SKILL.md` entry plus a `references/` directory.
 
-- `ui-ux` — for user-facing page, flow, component-system, responsive, or visual work. Read `.ai-kit/skills/ui-ux/SKILL.md` when present.
-- `api` — for endpoints, route handlers, request/response contracts, error shapes, authorization boundaries, or API tests. Read `.ai-kit/skills/api/SKILL.md` when present.
-- `data-layer` — for schema, migration, query, index, tenant-scoping, or data-access work. Read `.ai-kit/skills/data-layer/SKILL.md` when present.
-- `testing` — for choosing what to verify, adding or repairing tests, turning a fixed bug into a regression test, or deciding what CI gates. Read `.ai-kit/skills/testing/SKILL.md` when present.
-- `release` — for deploying, promoting a build, release preflight, rollback planning, or post-release verification. Read `.ai-kit/skills/release/SKILL.md` when present; production deployment still requires explicit user authorization.
-- Do not load a pack for work it does not cover: no `ui-ux` for backend, database, infrastructure, or documentation-only tasks; no `api` for pure UI work; no `data-layer` for tasks that do not change stored data; no `release` for feature work that has not reached a release decision.
+Resolve which packs exist from files or the manifest, never from a pack list written in prose, because prose lists drift:
+
+- installed packs: the directories under `.ai-kit/skills/`, where each `SKILL.md` frontmatter states its `name`, `description`, and scope
+- the kit's registered list with `activation`, `summary`, and `recommendFor` traits: `toolchain.json` → `skills.packs`
+- what the detector suggests for this project: `.ai-kit/project.json` → `capabilities.potentiallyUseful`
+
+Open the one pack whose frontmatter description matches the task, then open only the reference files that pack maps to. Never load a whole pack, and never load a pack "just in case".
+
+Boundaries that a description match alone gets wrong:
+
+- `ui-ux` owns the visual and flow layer of a web UI; `mobile` owns native platform behavior — lifecycle, offline/sync, permissions, device builds, and store release.
+- `data-layer` applies only when stored data changes, and `api` only when an HTTP surface changes; pure UI work loads neither.
+- `security` and `testing` are cross-cutting: they strengthen the pack that owns the change instead of replacing it.
+- `infrastructure` covers pipelines, runtimes, cloud, and networking — not application feature code.
+- Do not load a pack for work it does not cover: no `ui-ux` for backend, database, infrastructure, or documentation-only tasks; no `api` for pure UI work; no `data-layer` for tasks that do not change stored data; no `security` for cosmetic-only work; no `infrastructure` for application-only changes; no `mobile` for browser-only work; no `release` for feature work that has not reached a release decision.
 - Substantial UI work must establish user goal, task flow, hierarchy, responsive behavior, and browser/visual QA before it is considered complete.
 - Reuse the project's existing design system/components before adding another UI library.
 - Build success is not visual acceptance, and passing unit tests is not API or data verification. Verify changed routes in a real browser (Playwright and `@axe-core/playwright` when configured), exercise changed endpoints with real requests including a failure path and an authorization-negative case, and apply data changes to a local or explicitly authorized database with the rollback path and constraints checked.
 
-## Tool-selection rules
+- Before a mutating Git/database/cloud/container/remote command, run `node scripts/policy-check.mjs --target . --command "..."`; deny is a hard stop, approval-required needs explicit authorization, and decisions are appended to `.ai-kit/audit/events.jsonl`.
+- Use `node scripts/run-safe.mjs --command "..." --approved --reason "..."` only after an approval-required command has been explicitly authorized; never bypass the policy with a raw shell command when the gate applies.
+- Persist only non-secret decisions, lessons, and handoff context under `.ai-kit/memory/`; record task metrics when available with `scripts/metrics.mjs` and run `scripts/eval-kit.mjs` for deterministic kit-contract checks.
 
 - Prefer repository-local dependencies and scripts over global tools.
 - Use the lockfile's package manager. Never create a second lockfile.

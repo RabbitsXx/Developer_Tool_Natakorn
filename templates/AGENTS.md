@@ -15,12 +15,12 @@ At the start of a session, read `.ai-kit/project.json` when present, then `START
 
 ## Skill pack activation
 
-- Packs live at `.ai-kit/skills/<pack>/SKILL.md` (open Agent Skills format). Read only the pack that matches the task, then only the references it maps to.
-- UI work: `.ai-kit/skills/ui-ux/SKILL.md` for user-facing routes and flows. Do not load it for backend/database/infrastructure-only tasks.
-- API work: `.ai-kit/skills/api/SKILL.md` for endpoints, request/response contracts, authorization boundaries, and API tests.
-- Data work: `.ai-kit/skills/data-layer/SKILL.md` for schema, migration, query, and data-access changes.
-- Test work: `.ai-kit/skills/testing/SKILL.md` for test selection, regression tests, and what CI should gate.
-- Release work: `.ai-kit/skills/release/SKILL.md` for deploy preflight, execution, rollback planning, and post-release verification; production deployment requires explicit authorization.
+- Packs live at `.ai-kit/skills/<pack>/` (open Agent Skills format): a `SKILL.md` entry plus a `references/` directory.
+- Resolve which packs are installed from the directories under `.ai-kit/skills/` and from `.ai-kit/project.json` → `capabilities.potentiallyUseful`; each `SKILL.md` frontmatter states its `name`, `description`, and scope. Do not rely on a pack list written in prose, and when the kit repository is available treat `toolchain.json` → `skills.packs` as the authoritative registered list.
+- Open the one pack whose frontmatter description matches the task, then only the references that pack maps to; never load a whole pack or a pack "just in case".
+- Boundaries that a description match alone gets wrong: `ui-ux` is the web visual/flow layer while `mobile` owns native lifecycle, offline/sync, permissions, builds, and store release; `data-layer` needs stored-data changes and `api` needs an HTTP surface; `security` and `testing` strengthen the owning pack instead of replacing it; `infrastructure` is not application feature code; `release` activates only once a release decision exists and production needs explicit authorization.
+- Before mutating Git/database/cloud/container/remote systems, classify the command with `node scripts/policy-check.mjs`; deny is a hard stop and approval-required needs explicit authorization. Keep decisions in `.ai-kit/audit/events.jsonl`.
+- Use `node scripts/memory.mjs` for non-secret decisions, lessons, and handoff; use `node scripts/metrics.mjs` for task evidence.
 - Reuse the existing design system first; do not add a second component library without a requirement.
 - Build success is not visual acceptance, and passing unit tests is not API verification. Verify the actual route in a browser; use Playwright and accessibility checks when configured.
 
@@ -52,4 +52,5 @@ At the start of a session, read `.ai-kit/project.json` when present, then `START
 - Run Knip after substantial JS/TS feature churn when configured; review findings before deleting code.
 - Keep Lefthook fast and local; it supplements but does not replace final verification or remote CI.
 - Preserve the project's existing database/provider/ORM choice unless the task explicitly changes architecture.
-- State assumptions and do not claim unrun checks passed.
+- Never store secrets in `.ai-kit/memory/`, `.ai-kit/audit/`, or `.ai-kit/metrics/`.
+- Current repository evidence wins over memory and generated state.

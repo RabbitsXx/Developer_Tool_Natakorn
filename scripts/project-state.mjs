@@ -14,6 +14,8 @@ const HTTP_SERVER_DEPS = [
   'express', 'fastify', 'koa', 'hono', '@hono/node-server', '@nestjs/core', '@hapi/hapi', 'restify',
   '@apollo/server', 'apollo-server', 'graphql', '@trpc/server', 'elysia', 'polka', 'tinyhttp', 'h3', 'nitro',
 ];
+const MOBILE_DEPS = ['expo', 'react-native', '@react-navigation/native', '@react-navigation/native-stack', 'flutter'];
+const INFRA_MARKERS = ['Dockerfile', 'docker-compose.yml', 'docker-compose.yaml', 'terraform', 'pulumi', 'ansible', '.github/workflows'];
 const PYTHON_API_RE = /(fastapi|flask|django|starlette|litestar|falcon|sanic|tornado|bottle|aiohttp)/i;
 
 async function loadSkillPacks() {
@@ -142,6 +144,8 @@ function detectDatabase(deps, envExample) {
 
 function detectCapabilities(deps, markers, pkg) {
   const browserE2E = '@playwright/test' in deps ? 'playwright' : ('cypress' in deps ? 'cypress' : null);
+  const mobile = hasAny(deps, MOBILE_DEPS) || markers.has('android') || markers.has('ios') || markers.has('app.json') || markers.has('app.config.js') || markers.has('app.config.ts');
+  const infrastructure = INFRA_MARKERS.some((marker) => markers.has(marker));
   const skillPacks = SKILL_PACKS.filter((pack) => markers.has(skillEntryMarker(pack))).map((pack) => `${pack.id}-skill-pack`);
   const accessibility = '@axe-core/playwright' in deps ? 'axe-playwright' : null;
   const codeHealth = 'knip' in deps || markers.has('knip.json') || markers.has('knip.jsonc') || markers.has('knip.ts') ? 'knip' : null;
@@ -156,7 +160,7 @@ function detectCapabilities(deps, markers, pkg) {
   for (const name of ['lint', 'typecheck', 'test', 'test:e2e', 'build', 'format', 'knip']) {
     if (pkg?.scripts?.[name]) qualityScripts[name] = pkg.scripts[name];
   }
-  return { skillPacks, browserE2E, accessibility, codeHealth, gitHooks, backgroundJobs, observability, deployment, remoteCi, qualityScripts };
+  return { skillPacks, browserE2E, accessibility, codeHealth, gitHooks, backgroundJobs, observability, deployment, remoteCi, mobile, infrastructure, qualityScripts };
 }
 
 function stableArchitecture(detected) {
@@ -167,6 +171,8 @@ function stableArchitecture(detected) {
     databaseProviders: detected.database.providers,
     databaseAccessLayers: detected.database.accessLayers,
     browserE2E: detected.capabilities.browserE2E,
+    mobile: detected.capabilities.mobile,
+    infrastructure: detected.capabilities.infrastructure,
     accessibility: detected.capabilities.accessibility,
     codeHealth: detected.capabilities.codeHealth,
     gitHooks: detected.capabilities.gitHooks,
@@ -186,9 +192,9 @@ export async function inspectProject(targetPath) {
   const markerNames = [
     'package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lock', 'bun.lockb',
     'pyproject.toml', 'requirements.txt', 'Pipfile', 'poetry.lock', 'Cargo.toml', 'go.mod',
-    'composer.json', 'Gemfile', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'deno.json',
+    'composer.json', 'Gemfile', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'deno.json', 'Dockerfile',
+    'docker-compose.yml', 'docker-compose.yaml', 'terraform', 'pulumi', 'ansible', 'android', 'ios', 'app.json', 'app.config.js', 'app.config.ts',
     'next.config.js', 'next.config.mjs', 'next.config.ts', 'vite.config.js', 'vite.config.ts',
-    'astro.config.mjs', 'vercel.json', '.vercel/project.json', '.github/workflows', '.git',
     ...SKILL_PACKS.map(skillEntryMarker), 'knip.json', 'knip.jsonc', 'knip.ts', 'lefthook.yml', 'lefthook.yaml',
     'src', 'app', 'pages', 'public', 'index.html',
   ];
@@ -232,6 +238,8 @@ export async function inspectProject(targetPath) {
     detected.capabilities.backgroundJobs,
     detected.capabilities.observability,
     detected.capabilities.deployment,
+    detected.capabilities.mobile ? 'mobile' : null,
+    detected.capabilities.infrastructure ? 'infrastructure' : null,
     ...detected.database.providers,
     ...detected.database.accessLayers,
   ].filter(Boolean);
@@ -241,6 +249,8 @@ export async function inspectProject(targetPath) {
     'web-framework': ['nextjs', 'nuxt', 'astro', 'remix', 'vite', 'react'].includes(detected.framework),
     'http-api': await detectHttpApi(target, deps, markers),
     'database': detected.database.providers.length > 0 || detected.database.accessLayers.length > 0,
+    'mobile': detected.capabilities.mobile,
+    'infrastructure': detected.capabilities.infrastructure,
   };
   for (const pack of SKILL_PACKS) {
     const capability = `${pack.id}-skill-pack`;

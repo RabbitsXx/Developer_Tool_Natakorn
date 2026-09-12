@@ -9,6 +9,14 @@
 
 > `.ai-kit/project.json` is an orientation cache. Current repository evidence wins if it disagrees with this document or state.
 
+## Safety and continuity state
+
+- Command policy: `.ai-kit/policy.json` (deny-first); classify with `node scripts/policy-check.mjs`, execute approved commands with `node scripts/run-safe.mjs`
+- Audit trail: `.ai-kit/audit/events.jsonl` (redacted, gitignored)
+- Memory: `.ai-kit/memory/` — `decisions.jsonl`, `lessons.jsonl`, `handoff.md`
+- Session evidence: `.ai-kit/metrics/events.jsonl` (gitignored)
+- Designated execution environment: `<!-- local only / staging / production, with who authorizes what -->`
+
 ## Product
 
 - Name: `<!-- project name -->`

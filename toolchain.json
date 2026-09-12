@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "name": "Ultimate VibeCoder Ecosystem",
   "bootstrap": {
     "startPrompt": "START_PROMPT.md",
@@ -14,6 +14,12 @@
     "skillSync": "node scripts/sync-skills.mjs --target <project>",
     "skillDocs": "node scripts/sync-skill-docs.mjs --check",
     "verifyBootstrap": "node scripts/verify-bootstrap-protocol.mjs",
+    "policyCheck": "node scripts/policy-check.mjs --command \"...\"",
+    "safeRun": "node scripts/run-safe.mjs --command \"...\"",
+    "eval": "node scripts/eval-kit.mjs",
+    "memory": "node scripts/memory.mjs --kind handoff --text \"...\"",
+    "metrics": "node scripts/metrics.mjs --event session-end --session <id>",
+    "auditLog": ".ai-kit/audit/events.jsonl",
     "gitHook": "lefthook.yml",
     "rule": "Run both after changing kit files, templates, manifest contracts, or bootstrap scripts; both must report ok: true. The repository-local Lefthook pre-commit guard runs both automatically once enabled with `npx lefthook install`."
   },
@@ -23,7 +29,7 @@
     "referencesPath": "references",
     "syncScript": "scripts/sync-skills.mjs",
     "docSync": "scripts/sync-skill-docs.mjs",
-    "recommendForTags": ["web-framework", "http-api", "database"],
+    "recommendForTags": ["web-framework", "http-api", "database", "mobile", "infrastructure"],
     "portable": "Every pack follows the open Agent Skills format, so the same directory can be copied into any harness skills directory without rewriting it.",
     "packs": [
       {
@@ -67,6 +73,36 @@
         "recommendFor": ["web-framework", "http-api"]
       },
       {
+        "id": "security",
+        "version": 1,
+        "sourcePath": "skills/security",
+        "bootstrapPath": ".ai-kit/skills/security",
+        "activation": "Load for threat modeling, authz, untrusted input, secrets, dependencies, or security verification; read SKILL.md, then only the mapped references.",
+        "summary": "Threat modeling, identity and authorization, input/output safety, secrets and supply chain, and security verification.",
+        "summaryTh": "การทำ threat model, identity/authz, ความปลอดภัยของ input/output, secrets, supply chain และการตรวจ security",
+        "recommendFor": ["web-framework", "http-api", "database"]
+      },
+      {
+        "id": "infrastructure",
+        "version": 1,
+        "sourcePath": "skills/infrastructure",
+        "bootstrapPath": ".ai-kit/skills/infrastructure",
+        "activation": "Load for infrastructure, CI/CD, containers, cloud configuration, networking, or operational reliability work; read SKILL.md, then only the mapped references.",
+        "summary": "Infrastructure changes, CI/CD, containers, cloud configuration, reliability, and operational verification.",
+        "summaryTh": "งาน infrastructure, CI/CD, container, cloud configuration, reliability และ operational verification",
+        "recommendFor": ["infrastructure"]
+      },
+      {
+        "id": "mobile",
+        "version": 1,
+        "sourcePath": "skills/mobile",
+        "bootstrapPath": ".ai-kit/skills/mobile",
+        "activation": "Load for mobile application flows, platform behavior, offline state, native permissions, release builds, or mobile QA; read SKILL.md, then only the mapped references.",
+        "summary": "Mobile architecture, platform boundaries, offline behavior, permissions, release builds, and device verification.",
+        "summaryTh": "งาน mobile architecture, platform boundary, offline behavior, permissions, release build และการตรวจบนอุปกรณ์",
+        "recommendFor": ["mobile"]
+      },
+      {
         "id": "release",
         "version": 1,
         "sourcePath": "skills/release",
@@ -74,9 +110,7 @@
         "activation": "Load only for release work; read SKILL.md, then open only the reference files the task maps to.",
         "summary": "Planning and executing a production release safely: preflight verification, deploy execution, rollback readiness, release observability, and post-release confirmation.",
         "summaryTh": "การวางแผนและ execute release อย่างปลอดภัย: preflight, deploy, rollback, observability หลัง release และการยืนยันหลังปล่อยจริง",
-        "recommendFor": [
-          "web-framework"
-        ]
+        "recommendFor": ["web-framework"]
       }
     ]
   },
@@ -107,7 +141,10 @@
       "test-results"
     ],
     "packageManagerRule": "Use the package manager selected by the existing lockfile.",
-    "stackRule": "Detect and preserve the existing architecture. Do not force Supabase, Neon, Drizzle, Prisma, Vercel, or any other provider merely because it appears in this kit."
+    "stackRule": "Detect and preserve the existing architecture. Do not force Supabase, Neon, Drizzle, Prisma, Vercel, or any other provider merely because it appears in this kit.",
+    "commandPolicy": "Use scripts/policy-check.mjs before commands that can mutate Git, data, cloud, containers, or remote systems; deny-first decisions are logged without secrets.",
+    "memoryRule": "Persist only non-secret decisions, lessons, and handoff context under .ai-kit/memory; current repository evidence wins.",
+    "metricsRule": "Record task-level session metrics when available; metrics are evidence for improvement, not claims of model quality."
   },
   "contextBudget": {
     "smallTaskMaxFiles": 5,

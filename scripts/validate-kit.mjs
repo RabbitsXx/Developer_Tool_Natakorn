@@ -19,6 +19,8 @@ const required = [
   'docs/QUALITY_AND_PRODUCTION.md',
   'templates/AGENTS.md',
   'templates/PROJECT_CONTEXT.md',
+  'templates/policy.json',
+  'templates/memory/README.md',
   // Skill pack files are not listed here: they are validated from toolchain.json `skills.packs`, so
   // registering a new pack is a manifest change instead of an edit to this list.
   'templates/optional/playwright.config.ts',
@@ -34,11 +36,16 @@ const required = [
   'scripts/verify-bootstrap-protocol.mjs',
   'scripts/verify-tools.ps1',
   'scripts/tool-report.mjs',
+  'scripts/policy-check.mjs',
+  'scripts/run-safe.mjs',
+  'scripts/memory.mjs',
+  'scripts/metrics.mjs',
+  'scripts/eval-kit.mjs',
 ];
 
 for (const file of required) await access(path.join(root, file));
 const toolchain = JSON.parse(await readFile(path.join(root, 'toolchain.json'), 'utf8'));
-if (toolchain.schemaVersion < 4) throw new Error('toolchain schemaVersion must be >= 4');
+if (toolchain.schemaVersion < 5) throw new Error('toolchain schemaVersion must be >= 5');
 if (toolchain.bootstrap?.startPrompt !== 'START_PROMPT.md') throw new Error('bootstrap start prompt contract is missing');
 if (toolchain.bootstrap?.stateFile !== '.ai-kit/project.json') throw new Error('bootstrap state-file contract is missing');
 for (const mode of ['NEW_PROJECT', 'EXISTING_PROJECT', 'RESUME_CONFIGURED_PROJECT']) {
@@ -52,13 +59,35 @@ for (const id of ['neon', 'supabase', 'postgresql']) {
   if (!toolchain.databaseOptions.some((item) => item.id === id)) throw new Error(`missing database option: ${id}`);
 }
 const startPrompt = await readFile(path.join(root, 'START_PROMPT.md'), 'utf8');
-for (const phrase of ['NEW_PROJECT', 'EXISTING_PROJECT', 'RESUME_CONFIGURED_PROJECT', '.ai-kit/project.json', 'THINGS YOU WILL NOT CHANGE', '.ai-kit/skills/ui-ux/SKILL.md', 'Knip', 'Lefthook']) {
+for (const phrase of ['NEW_PROJECT', 'EXISTING_PROJECT', 'RESUME_CONFIGURED_PROJECT', '.ai-kit/project.json', 'THINGS YOU WILL NOT CHANGE', '.ai-kit/skills/<pack>/', 'Knip', 'Lefthook', 'policy-check.mjs', 'run-safe.mjs', 'memory.mjs', 'metrics.mjs']) {
   if (!startPrompt.includes(phrase)) throw new Error(`START_PROMPT.md contract missing: ${phrase}`);
 }
 const agents = await readFile(path.join(root, 'AGENTS.md'), 'utf8');
-if (!agents.includes('Search before reading broadly') || !agents.includes('Playwright') || !agents.includes('.ai-kit/project.json')) throw new Error('AGENTS.md policy upgrade missing');
+if (!agents.includes('Search before reading broadly') || !agents.includes('Playwright') || !agents.includes('.ai-kit/project.json') || !agents.includes('policy-check.mjs')) throw new Error('AGENTS.md policy upgrade missing');
+
+// The pack roster must live in toolchain.json only. A prose list of pack paths in the always-read
+// instruction files drifts every time a pack is added (it already did once), and it costs tokens in
+// every session. These files may describe how to *resolve* packs, never enumerate them.
+const packRosterPattern = /\.ai-kit\/skills\/[a-z0-9-]+\/SKILL\.md/g;
+for (const file of ['START_PROMPT.md', 'AGENTS.md', 'SETUP.md', 'templates/AGENTS.md']) {
+  const text = await readFile(path.join(root, file), 'utf8');
+  const enumerated = text.match(packRosterPattern) ?? [];
+  if (enumerated.length) {
+    throw new Error(`${file} enumerates skill packs in prose (${enumerated.join(', ')}); resolve packs from .ai-kit/skills/ or toolchain.json skills.packs instead`);
+  }
+  if (!text.includes('.ai-kit/skills/<pack>/')) throw new Error(`${file} must state where skill packs live`);
+}
+{
+  const startPromptText = await readFile(path.join(root, 'START_PROMPT.md'), 'utf8');
+  for (const pointer of ['.ai-kit/skills/', 'skills.packs', 'potentiallyUseful']) {
+    if (!startPromptText.includes(pointer)) throw new Error(`START_PROMPT.md must point at ${pointer} to resolve packs`);
+  }
+}
 const projectTemplate = await readFile(path.join(root, 'templates/PROJECT_CONTEXT.md'), 'utf8');
 if (!projectTemplate.includes('Database provider') || !projectTemplate.includes('AI context budget') || !projectTemplate.includes('.ai-kit/project.json')) throw new Error('PROJECT_CONTEXT template upgrade missing');
+const policyTemplate = await readFile(path.join(root, 'templates/policy.json'), 'utf8');
+if (!policyTemplate.includes('deny-first') || !policyTemplate.includes('approvalPatterns')) throw new Error('policy template contract missing');
+if (!(await readFile(path.join(root, 'templates/memory/README.md'), 'utf8')).includes('decisions.jsonl')) throw new Error('memory template contract missing');
 const bootstrapPs1 = await readFile(path.join(root, 'scripts/bootstrap-project.ps1'), 'utf8');
 const bootstrapSh = await readFile(path.join(root, 'scripts/bootstrap-project.sh'), 'utf8');
 for (const [name, text] of [['PowerShell bootstrap', bootstrapPs1], ['shell bootstrap', bootstrapSh]]) {
@@ -93,7 +122,7 @@ if (!kitHook.includes('pre-commit')) throw new Error('lefthook.yml must guard pr
 
 // Agent Skills contract: every registered pack stays installable in any harness that reads SKILL.md.
 const registeredPacks = toolchain.skills?.packs;
-if (!Array.isArray(registeredPacks) || registeredPacks.length < 2) throw new Error('toolchain.skills.packs must register at least the ui-ux and api packs');
+  if (!Array.isArray(registeredPacks) || registeredPacks.length < 8) throw new Error('toolchain.skills.packs must register the core and domain packs');
 if (toolchain.skills?.entry !== 'SKILL.md') throw new Error('toolchain skills.entry must be SKILL.md');
 const knownTags = toolchain.skills?.recommendForTags ?? [];
 const skillReport = [];

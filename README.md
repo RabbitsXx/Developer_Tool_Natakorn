@@ -66,7 +66,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
 
 <!-- skill-packs:start (generated from toolchain.json; run: node scripts/sync-skill-docs.mjs) -->
 
-_5 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.packs`; ทุก pack มี `SKILL.md` + `references/` ตามรูปแบบ Agent Skills_
+_8 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.packs`; ทุก pack มี `SKILL.md` + `references/` ตามรูปแบบ Agent Skills_
 
 | Pack | ใช้เมื่อ | แนะนำเมื่อโปรเจกต์มี |
 |---|---|---|
@@ -74,6 +74,9 @@ _5 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.pac
 | `api` → `.ai-kit/skills/api/SKILL.md` | งาน HTTP endpoint/route handler, สัญญา request/response, error shape, ขอบเขต authz และ API test | `http-api` |
 | `data-layer` → `.ai-kit/skills/data-layer/SKILL.md` | งาน schema/constraint, ความปลอดภัยของ migration, query และ index, tenant scoping, การตรวจข้อมูล | `database` |
 | `testing` → `.ai-kit/skills/testing/SKILL.md` | การเลือกสิ่งที่จะตรวจสอบ, ระดับของ test, browser journey, flakiness และ test data, regression test | `web-framework`, `http-api` |
+| `security` → `.ai-kit/skills/security/SKILL.md` | การทำ threat model, identity/authz, ความปลอดภัยของ input/output, secrets, supply chain และการตรวจ security | `web-framework`, `http-api`, `database` |
+| `infrastructure` → `.ai-kit/skills/infrastructure/SKILL.md` | งาน infrastructure, CI/CD, container, cloud configuration, reliability และ operational verification | `infrastructure` |
+| `mobile` → `.ai-kit/skills/mobile/SKILL.md` | งาน mobile architecture, platform boundary, offline behavior, permissions, release build และการตรวจบนอุปกรณ์ | `mobile` |
 | `release` → `.ai-kit/skills/release/SKILL.md` | การวางแผนและ execute release อย่างปลอดภัย: preflight, deploy, rollback, observability หลัง release และการยืนยันหลังปล่อยจริง | `web-framework` |
 
 <!-- skill-packs:end -->
@@ -119,12 +122,17 @@ _5 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.pac
 │   ├── sync-skills.mjs       # copy ทุก Agent Skills pack ที่ลงทะเบียนใน toolchain.json
 │   ├── sync-skill-docs.mjs   # generate ตาราง pack ใน README/INSTALLATION จาก manifest (--check สำหรับ gate)
 │   ├── new-skill.mjs         # scaffold pack ใหม่: สร้าง SKILL.md + references + ลงทะเบียนใน toolchain.json
+│   ├── policy-check.mjs      # classify คำสั่งแบบ deny-first + redact + append audit log (ไม่ execute)
+│   ├── run-safe.mjs          # รันคำสั่งผ่าน policy gate (allow / deny / approval-required)
+│   ├── memory.mjs            # บันทึก decision/lesson/handoff ที่ไม่เป็นความลับลง .ai-kit/memory/
+│   ├── metrics.mjs           # บันทึก session/task metrics ลง .ai-kit/metrics/events.jsonl
+│   ├── eval-kit.mjs          # deterministic evals ของสัญญา kit (ไม่ใช่การวัดความฉลาดของ model)
 │   ├── validate-kit.mjs      # ตรวจไฟล์บังคับ + manifest + สเปก SKILL.md ของทุก pack
 │   ├── verify-bootstrap-protocol.mjs # ทดสอบ NEW/EXISTING/RESUME + drift + secret isolation
 │   └── tool-report.mjs       # probe ทุก tool ใน toolchain.json → JSON + Markdown + HTML
 ├── skills/                   # <pack>/SKILL.md + references/ ต่อ pack ตามสเปก Agent Skills
 │                             # รายการ pack จริง = toolchain.json skills.packs (ตารางด้านบน generate จาก manifest)
-└── templates/                # ไฟล์ตั้งต้นที่ bootstrap นำไปใช้
+└── templates/                # ไฟล์ตั้งต้นที่ bootstrap นำไปใช้ (รวม policy.json และ memory/)
     └── optional/             # Playwright/CI starters เลือก copy เอง ไม่ bootstrap อัตโนมัติ
 ```
 
@@ -133,14 +141,33 @@ _5 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.pac
 หลังแก้ไฟล์ใน kit (templates, manifest หรือ bootstrap scripts) ให้รัน self-check ทั้งสองตัวก่อน commit:
 
 ```bash
-node scripts/validate-kit.mjs               # ไฟล์บังคับ 25 ไฟล์ + toolchain contract + สเปก SKILL.md ของทุก pack + ตาราง docs ตรงกับ manifest
+node scripts/validate-kit.mjs               # ไฟล์บังคับ + toolchain contract + สเปก SKILL.md ของทุก pack + ตาราง docs ตรงกับ manifest
 node scripts/sync-skills.mjs --target <project>  # copy ทุก pack ตาม toolchain.json (ไม่ทับไฟล์เดิม)
 node scripts/sync-skill-docs.mjs            # sync ตาราง pack ใน README/INSTALLATION จาก manifest (--check เพื่อ fail เมื่อเพี้ยน)
 node scripts/new-skill.mjs --id <name> --summary "..." --summary-th "..."   # scaffold pack ใหม่แบบคำสั่งเดียว (--dry-run เพื่อพรีวิว)
 node scripts/verify-bootstrap-protocol.mjs  # NEW / EXISTING / RESUME + drift + secret isolation
+node scripts/eval-kit.mjs                   # evals ของสัญญา kit: policy, redaction, state safety
 ```
 
-ทั้งสองคำสั่งอ่านไฟล์ใน kit และเขียนเฉพาะ temp directory ของระบบ (ไม่แตะโปรเจกต์ปลายทาง) และต้องคืน `"ok": true` ทั้งคู่ก่อนนับว่างานเสร็จ
+คำสั่งชุดนี้รันอยู่ใน temp directory ของระบบ หรืออ่านอย่างเดียวจาก kit (ไม่แตะโปรเจกต์ปลายทาง) และ `validate-kit` / `verify-bootstrap-protocol` / `eval-kit` ต้องคืน `"ok": true` ทั้งหมดก่อนนับว่างานเสร็จ
+
+## Command policy, memory และ metrics
+
+คิทไม่แกล้งอ้างว่าเป็น sandbox ระดับ OS — มันเป็น **command gate + audit trail** ที่ agent และ hook เรียกใช้ได้จริง
+
+```bash
+node scripts/policy-check.mjs --command "vercel deploy --prod"   # classify เท่านั้น ไม่รัน (exit 1 = deny, 2 = ต้องอนุมัติ)
+node scripts/run-safe.mjs --command "vercel deploy --prod" --approved --reason "authorized by user"
+node scripts/memory.mjs --kind decision --text "เก็บ provider เดิมไว้ เพราะ ..."
+node scripts/memory.mjs --kind handoff --text "งานที่ค้างและขั้นถัดไป"
+node scripts/metrics.mjs --event session-end --session <id> --status passed --files 7 --duration-ms 540000
+```
+
+- policy อ่านจาก `.ai-kit/policy.json` (bootstrap คัดมาจาก `templates/policy.json`) และตัดสินแบบ **deny ก่อน** แล้วจึง approval-required แล้วจึง allow
+- ทุก decision ถูก redact (token/secret/password/connection string) และ append ลง `.ai-kit/audit/events.jsonl` ซึ่งอยู่ใน `.gitignore` ของโปรเจกต์ปลายทาง
+- `.ai-kit/memory/` มี `decisions.jsonl`, `lessons.jsonl`, `handoff.md` และ **ปฏิเสธ** ข้อความที่มีลักษณะเป็น secret
+- `.ai-kit/metrics/` เป็นหลักฐานระดับ task/session สำหรับดูว่า kit ช่วยจริงไหม ส่วน `eval-kit.mjs` วัดได้แค่สัญญาของ kit ไม่ใช่คุณภาพของ model
+- ขอบเขตที่ต้องพูดตรง ๆ: gate นี้บังคับได้เท่าที่ harness เรียกมัน ถ้า agent รัน shell ตรง ๆ โดยไม่ผ่าน `run-safe.mjs` มันจะข้าม gate — hook/permission ของ harness ยังเป็นชั้นบังคับจริง
 
 นอกจากรันเองแล้ว `lefthook.yml` ที่ root ผูกคำสั่งทั้งสองไว้กับ `pre-commit` โดยรันเฉพาะเมื่อ staged files แตะสัญญาของ kit (manifest, docs, scripts, skills, templates, Markdown) เปิดใช้ครั้งเดียวต่อ clone:
 
@@ -254,24 +281,32 @@ _19 tools probed 2026-09-11T02:59:33.054Z on win32 10.0.26100, probe cwd `../app
 
 | สคริปต์ | วิธีทดสอบ | ผลจริง |
 |---|---|---|
-| `validate-kit.mjs` | `node scripts/validate-kit.mjs` | `ok: true` · required files 28 · `selfCheckHook: lefthook.yml (pre-commit)` |
-| `verify-bootstrap-protocol.mjs` | `node scripts/verify-bootstrap-protocol.mjs` | 10/10 PASS (NEW / EXISTING / RESUME, idempotent state, secret isolation, drift, multiple lockfile guard) |
+| `validate-kit.mjs` | `node scripts/validate-kit.mjs` | `ok: true` · required files 32 · `selfCheckHook: lefthook.yml (pre-commit)` |
+| `verify-bootstrap-protocol.mjs` | `node scripts/verify-bootstrap-protocol.mjs` | 13 PASS (NEW / EXISTING / RESUME, idempotent state, secret isolation, drift, lockfile guard, manifest-driven skills) |
 | `doctor.ps1` | `powershell -File scripts/doctor.ps1` และ `-Strict` | `0 required issue(s), 0 recommended issue(s)` |
 | `doctor.sh` | `bash scripts/doctor.sh` | `0 required issue(s), 0 recommended issue(s)` |
 | `verify-tools.ps1` | `powershell -File scripts/verify-tools.ps1` (+ `-SkipTools`) | entry point เดียว: `[OK]` ทั้ง 3 stage (doctor → validate-kit → verify-bootstrap) · `-SkipTools` รัน 2 stage ของ kit · exit 0 |
-| `verify-tools.ps1` (failure path) | แตะ `toolchain.json` ให้ `schemaVersion` เป็น 3 แล้วรัน `-SkipTools` | `[FAIL]  kit contract (validate-kit.mjs) (exit 1)` พร้อมข้อความจริง `Error: toolchain schemaVersion must be >= 4` และ script ออกด้วย exit 1 (ไม่กลืน error) |
+| `verify-tools.ps1` (failure path) | แตะ `toolchain.json` ให้ `schemaVersion` เป็น 4 แล้วรัน `-SkipTools` | `[FAIL] kit contract (validate-kit.mjs)` เพราะ schema ต้องเป็น 5 และ script ออกด้วย exit 1 (ไม่กลืน error) |
 | `setup-project.mjs` | โฟลเดอร์ว่าง | โหมด `NEW_PROJECT`, เขียน `.ai-kit/project.json`, `pendingDecisions: [product_requirements_before_stack_selection]`, safety flags ทั้ง 4 เป็น `false` |
 | `setup-project.mjs --dry-run` | โฟลเดอร์ว่างอีกอัน | `dryRun: true`, `stateFile: null` และไม่มีการสร้าง `.ai-kit/` |
 | `setup-project.mjs` + drift | เติม `package.json` (`next`) แล้วรันซ้ำ | `framework: nextjs`, `driftDetected: true` → `--accept-drift` แล้วเป็น `false` และรันซ้ำยังคง `false` |
-| `bootstrap-project.ps1` | ลงโปรเจกต์ใหม่ | สร้าง `START_PROMPT.md`, `AGENTS.md`, `PROJECT_CONTEXT.md`, `docs/`, `.ai-kit/project.json` (1,819 bytes), skill 4 pack รวม 24 ไฟล์ใต้ `.ai-kit/skills/` (SKILL.md + `references/` 5 ไฟล์ต่อ pack) |
+| `bootstrap-project.ps1` | ลงโปรเจกต์ใหม่ | สร้าง instruction/policy/memory state และ skill 8 pack รวม 48 ไฟล์ใต้ `.ai-kit/skills/` |
 | `bootstrap-project.ps1` (รันซ้ำ) | หลังเติมบรรทัดใน `AGENTS.md` และใน `.ai-kit/skills/ui-ux/SKILL.md` | ข้ามเทมเพลตเดิม 9 ครั้ง, sync รายงาน `skipped: 6` ต่อ pack และข้อความ local edit ของทั้งสองไฟล์ยังอยู่ (`grep -c` = 1) |
-| `sync-skills.mjs --dry-run` | โฟลเดอร์ว่าง | `ok: true`, `dryRun: true`, 4 pack รวม 24 ไฟล์เป็น `added` โดยยังไม่เขียนลงดิสก์ |
+| `sync-skills.mjs --dry-run` | โฟลเดอร์ว่าง | `ok: true`, `dryRun: true`, 8 pack รวม 48 ไฟล์เป็น `added` โดยยังไม่เขียนลงดิสก์ |
 | `sync-skill-docs.mjs --check` | แก้ `summary` ของ pack ใน manifest (บนสำเนาชั่วคราวของ kit) | `ok: false` + `docs/INSTALLATION.md: out of date` และ exit 1; `validate-kit.mjs` ก็ fail พร้อมข้อความให้รัน `sync-skill-docs.mjs` |
 | เพิ่ม pack ที่สาม (`data-layer`) | เขียน `skills/data-layer/` + ลงทะเบียนใน `toolchain.json` | `bootstrap-project.sh/.ps1` ไม่มีคำว่า `data-layer` เลย แต่ bootstrap ลง 18 ไฟล์ และ detector รายงาน `data-layer-skill-pack` |
-| เพิ่ม pack ที่สี่ (`testing`) โดยใช้ tag เดิม (`web-framework`, `http-api`) | เขียน `skills/testing/` + ลงทะเบียนใน `toolchain.json` เท่านั้น | sha256 ของ `scripts/*` ทั้ง 11 ไฟล์เท่าเดิมก่อน/หลัง, `grep -c testing scripts/*` = 0 ทุกไฟล์, bootstrap ลง 24 ไฟล์ และ detector รายงาน 4 capability |
-| scaffold pack ที่ห้า (`release-hotfix`, บนสำเนาชั่วคราวของ kit) | `node scripts/new-skill.mjs --id release-hotfix ...` คำสั่งเดียว | diff ของ `toolchain.json` = บล็อก pack เดียว, validate `ok: true` + `skillPacksPendingContent: [release-hotfix]`, bootstrap ลง 28 ไฟล์ 5 pack, `--dry-run`/tag ผิด/id ซ้ำ ทำงานถูกต้อง |
-| `bootstrap-project.sh` | ลงโปรเจกต์ใหม่ | ไฟล์ชุดเดียวกับฝั่ง PowerShell, skill 4 pack รวม 24 ไฟล์, ตัวตรวจจับต่อได้เป็น `RESUME_CONFIGURED_PROJECT` และรายงาน capability ครบทั้ง 4 pack |
-| `lefthook.yml` guard | `lefthook install` + commit จริง | บล็อก commit ที่แตะ kit contract ได้จริง (ดูแถว 12 ในตาราง A) |
+| เพิ่ม pack ที่สี่ (`testing`) โดยใช้ tag เดิม (`web-framework`, `http-api`) | เขียน `skills/testing/` + ลงทะเบียนใน `toolchain.json` เท่านั้น | sha256 ของ `scripts/*` ก่อน/หลังเท่ากัน (ตอนนั้น kit มี 4 pack จึงลง 24 ไฟล์ และ detector รายงาน 4 capability) |
+| domain packs | เพิ่ม `security`, `infrastructure`, และ `mobile` ผ่าน manifest + `SKILL.md` | bootstrap และ detector รับรู้ pack ตาม tag `web-framework`, `http-api`, `database`, `infrastructure`, `mobile` โดยไม่ hardcode รายชื่อใน bootstrap |
+| `bootstrap-project.sh` | ลงโปรเจกต์ใหม่ | ไฟล์ชุดเดียวกับฝั่ง PowerShell, policy/memory state และ skill packs ถูกติดตั้ง; detector ต่อได้เป็น `RESUME_CONFIGURED_PROJECT` |
+| `lefthook.yml` guard | `lefthook install` + commit จริง | บล็อก commit ที่แตะ kit contract ได้จริง และ self-check ปัจจุบันตรวจ manifest/docs/policy/memory/eval contracts |
+| `policy-check.mjs` | bootstrap โปรเจกต์จำลอง แล้ว classify 4 คำสั่ง (allow / deploy / reset --hard / curl พร้อม token) | `allow`, `approval_required`, `deny` ถูกต้อง; append audit 4 บรรทัด; grep ค่า token ที่ใส่ไปใน audit = **false** |
+| `run-safe.mjs` | กำหนด policy ให้ `node --version` ต้องอนุมัติ แล้วลอง 3 ทาง | ไม่ใส่ `--approved` → blocked (`decision: approval_required`); ใส่ `--approved --reason` → รันจริงและคืน `v22.17.1`; `deny` → exit 1 โดยไม่ออกคำสั่ง |
+| `memory.mjs` | decision + handoff + พยายามเขียนข้อความที่มี `TOKEN=...` | decision/handoff ถูกเขียนและอ่านคืนได้; ข้อความลักษณะ secret ถูกปฏิเสธ |
+| `metrics.mjs` | `--event session-end --session s1 --status passed --files 7` | เขียน `.ai-kit/metrics/events.jsonl` สำเร็จ |
+| `eval-kit.mjs` | `node scripts/eval-kit.mjs` | `ok: true` 4/4 evals (policy deny, deploy escalation, redaction, state safety) |
+| bootstrap 8 pack (bash และ PowerShell) | ลงโปรเจกต์ใหม่ทั้งสองภาษา | ได้ `policy.json`, `memory/README.md`, skill 48 ไฟล์ 8 pack, `project.json`; รันซ้ำข้ามเทมเพลต 11 ครั้ง + sync `skipped` ครบ 8 pack; local edit ใน `AGENTS.md` และ `SKILL.md` รอด |
+| ย้าย roster ของ pack ออกจาก prose | `grep` หา path เจาะจง `.ai-kit/skills/<id>/SKILL.md` ใน 4 ไฟล์ instruction | เหลือ **0 จุด** ทุกไฟล์; ทั้ง 4 ไฟล์ชี้ไป `.ai-kit/skills/`, `skills.packs` และ `potentiallyUseful`; bootstrap ทั้ง bash และ PowerShell ยังลง 48 ไฟล์ 8 pack |
+| gate กัน roster กลับมา | บนสำเนาชั่วคราวของ kit: ใส่ bullet 2 บรรทัดที่ระบุ path ของ pack แล้วรัน `validate-kit` | fail ทันทีด้วยข้อความ `AGENTS.md enumerates skill packs in prose (.ai-kit/skills/ui-ux/SKILL.md, .ai-kit/skills/api/SKILL.md)`; ลบออกแล้วผ่านอีกครั้ง |
 
 ผลชุดนี้เป็นของ Windows เท่านั้น — รอบนี้ยังไม่มีหลักฐานบน macOS/Linux
 
@@ -286,7 +321,9 @@ _19 tools probed 2026-09-11T02:59:33.054Z on win32 10.0.26100, probe cwd `../app
 - Database/provider/ORM เป็น project decision; migration history ต้องสะท้อน behavior ที่ deploy ได้จริงเมื่อ architecture ใช้ migrations
 - ทุกงานต้องมี lint/typecheck/test/build ตามที่โปรเจกต์รองรับ และทดสอบ UI จริงเมื่อเปลี่ยน behavior; critical browser journeys ใช้ Playwright เมื่อ configure ไว้
 - CI และ observability เป็น optional capability ไม่ใช่ dependency ที่ต้องยัดทุกโปรเจกต์
-- Skill packs (`ui-ux`, `api`, `data-layer`, `testing`) ถูก bootstrap เป็น instruction-only ใต้ `.ai-kit/skills/<pack>` ในรูปแบบ Agent Skills (`SKILL.md` + `references/`) จึงย้ายไปใช้กับ harness อื่นได้ทันที; Agent อ่าน `SKILL.md` แล้วเปิดเฉพาะ reference ที่ตรงกับงานเพื่อลด token/context
+- Skill packs (`ui-ux`, `api`, `data-layer`, `testing`, `security`, `infrastructure`, `mobile`, `release`) ถูก bootstrap เป็น instruction-only ใต้ `.ai-kit/skills/<pack>` ในรูปแบบ Agent Skills (`SKILL.md` + `references/`) จึงย้ายไปใช้กับ harness อื่นได้ทันที; Agent อ่าน `SKILL.md` แล้วเปิดเฉพาะ reference ที่ตรงกับงานเพื่อลด token/context
+- ก่อนรันคำสั่งที่แก้ Git/database/cloud/container/remote system ให้ใช้ `scripts/policy-check.mjs` แบบ deny-first; ทุก decision ถูก redact และ append ลง `.ai-kit/audit/events.jsonl` แต่ตัว checker ไม่ใช่ OS sandbox และไม่ execute command แทน agent
+- ใช้ `.ai-kit/memory/` สำหรับ decision/lesson/handoff ที่ไม่เป็นความลับ และ `.ai-kit/metrics/` สำหรับหลักฐานระดับ task/session; `scripts/eval-kit.mjs` วัด contract ของ kit ไม่ใช่ความฉลาดของ model
 - Knip, axe-core และ Lefthook เป็น optional project capabilities: detector แนะนำ/ตรวจจับได้ แต่ bootstrap ไม่ติดตั้ง dependency ให้อัตโนมัติ
 
 อ่าน [ผลตรวจสเปกและสิ่งที่แก้](docs/AUDIT.md) ก่อนนำ stack นี้ไปใช้จริง

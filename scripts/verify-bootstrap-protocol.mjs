@@ -10,6 +10,7 @@ const result = {};
 try {
   const blank = path.join(root, 'blank');
   await mkdir(path.join(blank, 'docs'), { recursive: true });
+  // Bootstrap-owned safety and continuity files are part of the kit contract.
   await writeFile(path.join(blank, 'START_PROMPT.md'), 'kit prompt');
   await writeFile(path.join(blank, 'AGENTS.md'), 'kit rules');
   await writeFile(path.join(blank, 'PROJECT_CONTEXT.md'), 'kit context');

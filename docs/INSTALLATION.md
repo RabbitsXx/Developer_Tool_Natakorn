@@ -29,6 +29,37 @@ node scripts/setup-project.mjs --target /path/to/project --dry-run
 
 See `docs/BOOTSTRAP_PROTOCOL.md` for state and drift rules.
 
+## Command policy, memory, and metrics
+
+Bootstrap also installs the safety and continuity contract, all without installing any package:
+
+```text
+.ai-kit/policy.json          # deny-first command policy (copied from templates/policy.json)
+.ai-kit/memory/              # decisions.jsonl, lessons.jsonl, handoff.md
+.ai-kit/audit/               # events.jsonl, appended by the policy gate (gitignored)
+.ai-kit/metrics/             # session/task evidence (gitignored)
+```
+
+Classify a mutating command before running it, and execute it through the gate when it needs approval:
+
+```bash
+node scripts/policy-check.mjs --target . --command "vercel deploy --prod"
+node scripts/run-safe.mjs --target . --command "vercel deploy --prod" --approved --reason "user authorized"
+```
+
+`policy-check.mjs` exits 1 for deny and 2 for approval-required, and it never executes the command. `run-safe.mjs` executes only after an allow decision or a recorded approval. Both append a redacted event to `.ai-kit/audit/events.jsonl`.
+
+Record continuity and evidence — secrets are rejected outright:
+
+```bash
+node scripts/memory.mjs --target . --kind decision --text "kept the existing provider because ..."
+node scripts/memory.mjs --target . --kind handoff --text "what is left and what comes next"
+node scripts/metrics.mjs --target . --event session-end --session <id> --status passed --files 7
+node scripts/eval-kit.mjs
+```
+
+This is a command gate and audit trail, not an OS sandbox. It constrains only the commands routed through it, so the harness's own permission layer is still the enforcement boundary. `eval-kit.mjs` verifies kit contracts (policy decisions, redaction, state safety) — it does not measure model quality.
+
 ## Required baseline
 
 - Git
@@ -144,7 +175,7 @@ Bootstrap synchronizes every pack registered in `toolchain.json` under `skills.p
 
 <!-- skill-packs:start (generated from toolchain.json; run: node scripts/sync-skill-docs.mjs) -->
 
-_5 packs are registered in `toolchain.json` under `skills.packs`; each one is a folder with `SKILL.md` plus `references/` in the open Agent Skills format._
+_8 packs are registered in `toolchain.json` under `skills.packs`; each one is a folder with `SKILL.md` plus `references/` in the open Agent Skills format._
 
 | Pack | Source | Bootstrapped to | Use when |
 |---|---|---|---|
@@ -152,6 +183,9 @@ _5 packs are registered in `toolchain.json` under `skills.packs`; each one is a 
 | `api` | `skills/api` | `.ai-kit/skills/api` | HTTP endpoints and route handlers, request/response contracts, error shapes, authorization boundaries, and API tests. |
 | `data-layer` | `skills/data-layer` | `.ai-kit/skills/data-layer` | Schema and constraint design, migration safety and rollback, query and index work, tenant scoping, data verification. |
 | `testing` | `skills/testing` | `.ai-kit/skills/testing` | Choosing what to verify, test levels, browser journeys, flakiness and test data, regression tests. |
+| `security` | `skills/security` | `.ai-kit/skills/security` | Threat modeling, identity and authorization, input/output safety, secrets and supply chain, and security verification. |
+| `infrastructure` | `skills/infrastructure` | `.ai-kit/skills/infrastructure` | Infrastructure changes, CI/CD, containers, cloud configuration, reliability, and operational verification. |
+| `mobile` | `skills/mobile` | `.ai-kit/skills/mobile` | Mobile architecture, platform boundaries, offline behavior, permissions, release builds, and device verification. |
 | `release` | `skills/release` | `.ai-kit/skills/release` | Planning and executing a production release safely: preflight verification, deploy execution, rollback readiness, release observability, and post-release confirmation. |
 
 <!-- skill-packs:end -->

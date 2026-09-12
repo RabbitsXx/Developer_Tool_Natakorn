@@ -89,8 +89,10 @@ CONTEXT:
 - Use RTK for supported terminal commands when available; rerun only failing commands raw when compressed output hides diagnostics.
 
 OPTIONAL — enable only when justified:
-- Skill packs (open Agent Skills format): `ui-ux` at `.ai-kit/skills/ui-ux/SKILL.md` for user-facing UI work, `api` at `.ai-kit/skills/api/SKILL.md` for endpoint/contract work, `data-layer` at `.ai-kit/skills/data-layer/SKILL.md` for schema/migration/query work, `testing` at `.ai-kit/skills/testing/SKILL.md` for test strategy and regression work, `release` at `.ai-kit/skills/release/SKILL.md` for deploy and rollback work; read SKILL.md first, then open only the reference files mapped to the task, never a whole pack by default
-- Playwright: repeatable browser/E2E verification for interactive web flows
+- Skill packs (open Agent Skills format): resolve which packs exist from `.ai-kit/skills/` and from the registered list in the kit manifest instead of a pack list written in prose — see "Skill pack activation" below
+- Command policy: before a mutating Git/database/cloud/container/remote command, run `node scripts/policy-check.mjs --target . --command "..."`; deny is a hard stop, approval-required needs explicit authorization, and every decision is recorded in `.ai-kit/audit/events.jsonl`. If authorized, execute through `node scripts/run-safe.mjs --command "..." --approved --reason "..."`, not a raw shell bypass.
+- Persistent memory: use `node scripts/memory.mjs --kind decision|lesson|handoff --text "..."`; store only non-secret context in `.ai-kit/memory/`, and read the current handoff before resuming substantial work
+- Session evidence: record task-level events with `node scripts/metrics.mjs --event session-start|session-end --session <id> ...`; run `node scripts/eval-kit.mjs` for deterministic kit-contract evals, not as a claim about model intelligence
 - `@axe-core/playwright`: accessibility checks when Playwright is already selected for a user-facing web project
 - Knip: JS/TS code-health checks for unused files, exports, and dependencies when the project is mature enough for cleanup
 - Lefthook: optional local pre-commit/pre-push quality guard when the repository has stable quality commands
@@ -105,47 +107,29 @@ OPTIONAL — enable only when justified:
 
 ## Skill pack activation
 
-Skill packs use the open Agent Skills format. Activate one only when the task matches it.
+Skill packs live in `.ai-kit/skills/<pack>/` in the open Agent Skills format: a `SKILL.md` entry plus a `references/` directory.
 
-When the user's request changes a user-facing page, flow, component system, responsive behavior, or visual quality:
+Resolve which packs exist, never from a prose list, which drifts: the directories under `.ai-kit/skills/` (each `SKILL.md` frontmatter states its name, description, and scope), `.ai-kit/project.json` → `capabilities.potentiallyUseful` for what this project needs, and — when the kit repository is available — `toolchain.json` → `skills.packs` for the registered list and `recommendFor` traits.
 
-1. Read `.ai-kit/skills/ui-ux/SKILL.md` if present.
-2. Load only the skill files mapped to the task type.
-3. For a substantial new page/redesign, do not jump directly to JSX/CSS. Establish user goal, task flow, hierarchy, design-system constraints, responsive behavior, and QA plan first.
-4. Reuse the project's existing component/design system before adding another one.
-5. Do not declare UI complete from lint/typecheck/build alone. Verify the real route in a browser; use Playwright when configured and accessibility checks when available.
-6. Treat screenshot/visual inspection as evidence for layout quality, not as decoration.
+Open only the pack whose description matches the task, then only the reference files it maps to. Never load a whole pack, and never load one "just in case". Boundaries a description match gets wrong:
 
-When the request adds or changes an endpoint, route handler, request/response contract, error shape, or API test:
+- `ui-ux` is the web visual/flow layer; `mobile` owns native lifecycle, offline/sync, permissions, device builds, and store release. Neither covers the other.
+- `data-layer` needs stored-data changes; `api` needs an HTTP surface; pure UI loads neither.
+- `security` and `testing` strengthen the pack that owns the change instead of replacing it.
+- `infrastructure` is pipelines, runtimes, cloud, and networking — not application feature code.
+- `release` activates only once a release decision exists; production still needs explicit authorization.
 
-1. Read `.ai-kit/skills/api/SKILL.md` if present.
-2. Open only the reference files mapped to the task type.
-3. Decide status codes and the shared error envelope before writing handler code.
-4. Never trust client-supplied identity, tenant, role, or computed values; authorize the specific resource.
-5. Do not accept unit tests alone as verification. Exercise the changed endpoints with real requests, including a failure path and an authorization-negative case.
+Details live in each pack. These rules must survive even when the pack is not read:
 
-When the request adds or changes a table, column, relation, index, constraint, migration, backfill, or query:
+- **User-facing UI** — never jump from a request straight to JSX/CSS: establish user goal, task flow, hierarchy, design-system constraints, responsive behavior, and a QA plan first; reuse the existing design system; a passing build is not visual acceptance, so verify the real route in a browser (Playwright and accessibility checks when configured); treat screenshots as layout evidence, not decoration.
 
-1. Read `.ai-kit/skills/data-layer/SKILL.md` if present.
-2. Open only the reference files mapped to the task type.
-3. Keep the project's existing database provider and access layer; do not switch providers or ORMs.
-4. Never run a destructive migration against a linked remote database unless the user explicitly names the environment and authorizes it.
-5. Do not accept a passing build or unit suite as verification. Apply the change to a local or explicitly authorized database, check the rollback path, and verify the constraint or isolation behavior that changed with a negative case.
+- **Endpoints and contracts** — decide status codes and one shared error envelope before writing handlers; never trust client-supplied identity, tenant, role, or computed values, and authorize the specific resource; unit tests alone are not API verification — exercise real requests including a failure path and an authorization-negative case.
 
-When the request adds or changes tests, or fixes a bug that must not return:
+- **Schema and queries** — keep the existing provider and access layer; never run a destructive migration against a linked remote database unless the user names the environment and authorizes it; a passing build is not data verification — apply the change to a local or authorized database, check the rollback path, and exercise the changed constraint or isolation behavior with a negative case.
 
-1. Read `.ai-kit/skills/testing/SKILL.md` if present.
-2. Choose the lowest level that can still catch the failure; keep browser journeys few and real.
-3. Write the regression test so it fails on the old behavior before the fix, and name it after the failure it prevents.
-4. Never report a suite as passing without running it and reading the output; record skipped checks and the reason.
+- **Tests** — choose the lowest level that still catches the failure and keep browser journeys few and real; write the regression test so it fails on the old behavior before the fix, named after the failure it prevents; never report a suite as passing without running it and reading the output, and record skipped checks with the reason.
 
-When the request deploys, promotes a build, or verifies a release:
-
-1. Read `.ai-kit/skills/release/SKILL.md` if present.
-2. Complete preflight before anything moves: commit identity, verification ladder, migration state, configuration for the named environment.
-3. Decide rollback triggers and the procedure before deploying.
-4. Never deploy production, change cloud configuration, or rotate secrets unless the user explicitly names the target and authorizes it; without authorization, stop after preflight and say so.
-5. Confirm health on real traffic with the release identity attached, and close the release with post-release verification and owned follow-ups.
+- **Release** — complete preflight before anything moves (commit identity, verification ladder, migration state, configuration for the named environment) and decide rollback triggers before deploying; never deploy production, change cloud configuration, or rotate secrets unless the user names the target and authorizes it — without authorization, stop after preflight and say so; confirm health on real traffic with the release identity attached and close with owned follow-ups.
 
 For tasks matching no pack, do not load a pack.
 

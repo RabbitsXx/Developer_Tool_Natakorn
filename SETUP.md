@@ -29,14 +29,14 @@
 
 ## Skill pack activation
 
-- Packs live at `.ai-kit/skills/<pack>/SKILL.md` in the open Agent Skills format. Read only the pack that matches the task, then only the references it maps to.
-- UI work: read `.ai-kit/skills/ui-ux/SKILL.md` for user-facing page, flow, responsive, or visual work; do not load it for backend-only tasks.
-- API work: read `.ai-kit/skills/api/SKILL.md` for endpoints, route handlers, request/response contracts, authorization boundaries, or API tests.
-- Data work: read `.ai-kit/skills/data-layer/SKILL.md` for schema, migration, query, index, tenant-scoping, or data-access changes.
-- Test work: read `.ai-kit/skills/testing/SKILL.md` when choosing test levels, adding or repairing tests, fixing a bug that must not return, or deciding CI gates.
-- Release work: read `.ai-kit/skills/release/SKILL.md` when preparing or executing a deploy, planning rollback, or verifying a release; production deployment requires explicit authorization.
+- Packs live at `.ai-kit/skills/<pack>/` in the open Agent Skills format: a `SKILL.md` entry plus a `references/` directory.
+- Resolve which packs exist from the filesystem or the manifest, never from a pack list written in prose: the directories under `.ai-kit/skills/`, the registered list in `toolchain.json` → `skills.packs`, or `.ai-kit/project.json` → `capabilities.potentiallyUseful`.
+- Open the one pack whose frontmatter description matches the task, then only the references that pack maps to; never load a whole pack or a pack "just in case".
+- Boundaries that a description match alone gets wrong: `ui-ux` is the web visual/flow layer while `mobile` owns native lifecycle, offline/sync, permissions, builds, and store release; `data-layer` needs stored-data changes and `api` needs an HTTP surface; `security` and `testing` strengthen the owning pack instead of replacing it; `infrastructure` is not application feature code.
+- Before mutating Git, database, cloud, container, or remote systems, classify the command with `node scripts/policy-check.mjs`; deny is a hard stop and approval-required needs explicit authorization. Decisions are appended to `.ai-kit/audit/events.jsonl`.
+- Persist only non-secret decisions, lessons, and handoff context with `node scripts/memory.mjs`; record session evidence with `node scripts/metrics.mjs`.
 - For substantial UI work, define user goal, task flow, hierarchy, design-system constraints, responsive behavior, and visual/browser QA before implementation is considered complete.
-- If Playwright is selected, add repeatable browser checks; if `@axe-core/playwright` is selected, include accessibility scanning. Use Knip after substantial JS/TS churn and Lefthook only as a fast local guard.
+- Release work activates only once a release decision exists; preparing or executing a deploy, planning rollback, or verifying a release requires explicit authorization for production.
 
 ## 3. Plan
 
