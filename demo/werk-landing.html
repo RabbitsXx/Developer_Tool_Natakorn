@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Werk — แหล่งรวมฟรีแลนซ์คุณภาพ จ้างงานง่ายในที่เดียว (เดโม)</title>
+<meta name="description" content="Werk (หน้าเดโม) — ตัวอย่างโครงสร้างหน้าแรกของเว็บจ้างฟรีแลนซ์: ค้นหาบริการ, หมวดหมู่ยอดนิยม, บริการแนะนำ, ขั้นตอนการใช้งาน, รีวิว และคำถามที่พบบ่อย">
+<style>
+  :root {
+    --teal: #1c7c54;      /* original brand color for this demo */
+    --teal-dark: #14603f;
+    --teal-tint: #e7f4ee;
+    --ink: #1c2b24;
+    --muted: #5f7268;
+    --line: #e3e9e5;
+    --bg: #ffffff;
+    --soft: #f6f9f7;
+    --amber: #f5a623;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "IBM Plex Sans Thai", "Noto Sans Thai", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.6;
+  }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 10px; top: 10px; background: var(--teal); color: #fff; padding: 8px 14px; border-radius: 8px; z-index: 300; }
+  a { color: inherit; }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 20px; }
+
+  /* top bar */
+  .topbar { background: var(--teal); color: #fff; font-size: 13px; }
+  .topbar .wrap { display: flex; justify-content: space-between; padding-top: 6px; padding-bottom: 6px; }
+  .topbar a { color: #d9efe4; text-decoration: none; margin-left: 18px; }
+  .topbar a:hover { color: #fff; text-decoration: underline; }
+
+  header.site { position: sticky; top: 0; z-index: 100; background: #fff; border-bottom: 1px solid var(--line); }
+  header.site .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
+  .logo { font-weight: 800; font-size: 23px; letter-spacing: -.02em; color: var(--teal); text-decoration: none; }
+  .logo span { color: var(--ink); }
+  .searchbox { flex: 1; display: flex; max-width: 560px; }
+  .searchbox input {
+    flex: 1; border: 1.5px solid var(--line); border-right: 0; border-radius: 10px 0 0 10px;
+    padding: 10px 16px; font-size: 15px; font-family: inherit; color: var(--ink); background: var(--soft);
+  }
+  .searchbox input::placeholder { color: var(--muted); }
+  .searchbox button {
+    border: 0; background: var(--teal); color: #fff; padding: 0 20px; border-radius: 0 10px 10px 0;
+    cursor: pointer; font-size: 15px; font-family: inherit;
+  }
+  .searchbox button:hover { background: var(--teal-dark); }
+  .nav-actions { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+  .nav-actions a { text-decoration: none; font-size: 15px; color: var(--ink); white-space: nowrap; }
+  .nav-actions a:hover { color: var(--teal); }
+  .btn {
+    display: inline-block; text-decoration: none; text-align: center; cursor: pointer;
+    font-weight: 600; font-size: 15px; border-radius: 10px; padding: 10px 22px; border: 0; font-family: inherit;
+  }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: var(--teal-dark); }
+  .btn-outline { background: #fff; color: var(--teal); border: 1.5px solid var(--teal); }
+  .btn-outline:hover { background: var(--teal-tint); }
+  @media (max-width: 860px) { nav.main { display: none; } .searchbox { display: none; } }
+
+  /* hero */
+  .hero { background: linear-gradient(180deg, var(--teal-tint), #fff); padding: 54px 0 40px; }
+  .hero h1 { font-size: clamp(26px, 4.6vw, 40px); font-weight: 800; letter-spacing: -.01em; line-height: 1.25; }
+  .hero h1 em { font-style: normal; color: var(--teal); }
+  .hero p.sub { color: var(--muted); margin-top: 10px; font-size: 16.5px; max-width: 640px; }
+  .hero .quick { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .hero .quick span { color: var(--muted); font-size: 14px; }
+  .quick-tag {
+    font-size: 13.5px; text-decoration: none; color: var(--teal-dark); background: #fff;
+    border: 1px solid var(--line); padding: 6px 14px; border-radius: 99px;
+  }
+  .quick-tag:hover { border-color: var(--teal); background: var(--teal-tint); }
+
+  /* categories */
+  section { padding: 46px 0; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+  .head h2 { font-size: clamp(20px, 3vw, 26px); font-weight: 800; letter-spacing: -.01em; }
+  .head a { color: var(--teal); font-size: 14.5px; text-decoration: none; white-space: nowrap; }
+  .head a:hover { text-decoration: underline; }
+  .catgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 980px) { .catgrid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .catgrid { grid-template-columns: 1fr; } }
+  .cat {
+    display: flex; align-items: center; gap: 14px; text-decoration: none;
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .cat:hover { border-color: var(--teal); box-shadow: 0 4px 14px rgba(28,124,84,.08); }
+  .cat .emoji {
+    width: 46px; height: 46px; border-radius: 12px; background: var(--teal-tint);
+    display: grid; place-items: center; font-size: 22px; flex: none;
+  }
+  .cat b { font-size: 15.5px; display: block; }
+  .cat span { color: var(--muted); font-size: 13px; }
+
+  /* service cards */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 980px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff;
+    text-decoration: none; display: flex; flex-direction: column; transition: box-shadow .15s, transform .15s;
+  }
+  .card:hover { box-shadow: 0 8px 22px rgba(28,43,36,.1); transform: translateY(-2px); }
+  /* no-photo cover: generated monogram tile */
+  .cover {
+    height: 120px; display: grid; place-items: center; color: #fff; font-weight: 800;
+    font-size: 26px; letter-spacing: .04em;
+  }
+  .c1 { background: linear-gradient(135deg, #1c7c54, #2aa876); }
+  .c2 { background: linear-gradient(135deg, #276678, #3d94a8); }
+  .c3 { background: linear-gradient(135deg, #7d5ba6, #a385c9); }
+  .c4 { background: linear-gradient(135deg, #b0713c, #d29a63); }
+  .c5 { background: linear-gradient(135deg, #8a3b3b, #bd6a6a); }
+  .c6 { background: linear-gradient(135deg, #3d6b35, #699a5e); }
+  .c7 { background: linear-gradient(135deg, #4b4e6d, #767a9e); }
+  .c8 { background: linear-gradient(135deg, #83677b, #ad94a6); }
+  .card .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .card .title { font-size: 15px; font-weight: 600; line-height: 1.4; }
+  .card .seller { color: var(--muted); font-size: 13.5px; }
+  .card .rating { color: var(--amber); font-size: 13.5px; }
+  .card .rating small { color: var(--muted); }
+  .card .price { margin-top: auto; font-size: 17px; font-weight: 800; }
+  .card .price small { color: var(--muted); font-weight: 400; font-size: 12.5px; }
+
+  /* steps */
+  .steps { background: var(--soft); border-radius: 18px; padding: 40px 34px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+  .step .n {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--teal); color: #fff;
+    display: grid; place-items: center; font-weight: 800; font-size: 17px; margin-bottom: 12px;
+  }
+  .step h3 { font-size: 17px; margin-bottom: 6px; }
+  .step p { color: var(--muted); font-size: 14.5px; }
+
+  /* trust strip */
+  .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; text-align: center; }
+  @media (max-width: 720px) { .trust { grid-template-columns: 1fr; } }
+  .trust b { font-size: clamp(26px, 4vw, 36px); font-weight: 800; color: var(--teal); display: block; }
+  .trust span { color: var(--muted); font-size: 14px; }
+
+  /* reviews */
+  .review-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 860px) { .review-grid { grid-template-columns: 1fr; } }
+  .review { border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; background: #fff; }
+  .review .stars { color: var(--amber); font-size: 14px; letter-spacing: 2px; }
+  .review p { font-size: 14.5px; margin: 10px 0 14px; color: var(--ink); }
+  .review .who { color: var(--muted); font-size: 13px; }
+
+  /* cta band */
+  .cta-band { background: var(--teal); color: #fff; border-radius: 18px; padding: 44px 40px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .cta-band h2 { font-size: clamp(20px, 3vw, 28px); font-weight: 800; }
+  .cta-band p { color: #d9efe4; margin-top: 6px; }
+  .cta-band .btn { background: #fff; color: var(--teal-dark); }
+  .cta-band .btn:hover { background: var(--teal-tint); }
+
+  /* faq */
+  .faq { max-width: 760px; }
+  .faq details { border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; background: #fff; }
+  .faq summary { cursor: pointer; font-weight: 600; font-size: 15.5px; list-style: none; display: flex; justify-content: space-between; }
+  .faq summary::after { content: "+"; color: var(--teal); font-size: 20px; }
+  .faq details[open] summary::after { content: "–"; }
+  .faq details p { color: var(--muted); font-size: 14.5px; margin-top: 12px; }
+
+  footer.site { background: var(--soft); border-top: 1px solid var(--line); padding: 44px 0 60px; margin-top: 30px; }
+  footer.site .cols { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 28px; }
+  @media (max-width: 860px) { footer.site .cols { grid-template-columns: 1fr 1fr; } }
+  footer.site h4 { font-size: 14px; margin-bottom: 12px; }
+  footer.site ul { list-style: none; }
+  footer.site li a { color: var(--muted); text-decoration: none; font-size: 14px; display: block; padding: 4px 0; }
+  footer.site li a:hover { color: var(--teal); }
+  footer.site .demo-note { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+
+  /* search toast */
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; font-size: 14px; padding: 12px 20px; border-radius: 12px;
+    opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 400; max-width: 90vw;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">ข้ามไปยังเนื้อหาหลัก</a>
+
+<div class="topbar">
+  <div class="wrap">
+    <div>เดโมเพื่อการศึกษา — ไม่ใช่เว็บจริง</div>
+    <div><a href="#start">สมัครขายบริการ</a><a href="#faq">ช่วยเหลือ</a></div>
+  </div>
+</div>
+
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="#top">werk<span>.co.th</span></a>
+    <form class="searchbox" id="searchform" role="search">
+      <input id="q" type="search" placeholder="ค้นหาบริการ เช่น ทำเว็บไซต์ ออกแบบโลโก้ เขียนแบบบ้าน…" aria-label="ค้นหาบริการ">
+      <button type="submit">ค้นหา</button>
+    </form>
+    <nav class="nav-actions" aria-label="เมนูผู้ใช้">
+      <a href="#categories">หมวดหมู่</a>
+      <a href="#start">เริ่มขายบริการ</a>
+      <a class="btn btn-primary sm" href="#get" style="padding:8px 18px">เริ่มจ้างงาน</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section class="hero" id="top" style="padding-top:40px">
+    <div class="wrap">
+      <h1>จ้างฟรีแลนซ์คุณภาพ <em>ง่าย ๆ ในที่เดียว</em></h1>
+      <p class="sub">ค้นหาจากบริการหลากหลายหมวด เทียบราคา อ่านรีวิวจริง และจ่ายเงินผ่านระบบกลางที่คุ้มครองทั้งสองฝ่าย — จ่ายเมื่องานเสร็จตามที่คุยกัน</p>
+      <div class="quick">
+        <span>ยอดนิยม:</span>
+        <a class="quick-tag" href="#services">ทำเว็บไซต์</a>
+        <a class="quick-tag" href="#services">ออกแบบโลโก้</a>
+        <a class="quick-tag" href="#services">ตัดต่อวีดีโอ</a>
+        <a class="quick-tag" href="#services">เขียนแบบบ้าน</a>
+        <a class="quick-tag" href="#services">ดูดวง</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section id="categories">
+    <div class="wrap">
+      <div class="head">
+        <h2>หมวดหมู่ยอดนิยม</h2>
+        <a href="#categories">ดูทั้งหมด 90+ หมวด →</a>
+      </div>
+      <div class="catgrid">
+        <a class="cat" href="#services"><span class="emoji">💻</span><span><b>รับทำเว็บไซต์ &amp; แอป</b><span>1,240 บริการ</span></span></a>
+        <a class="cat" href="#services"><span class="emoji">🎨</span><span><b>กราฟิก &amp; โลโก้</b><span>2,030 บริการ</span></span></a>
+        <a class="cat" href="#services"><span class="emoji">🎬</span><span><b>ถ่ายวิดีโอ &amp; ตัดต่อ</b><span>860 บริการ</span></span></a>
+        <a class="cat" href="#services"><span class="emoji">✍️</span><span><b>เขียนคอนเทนต์ &amp; แปล</b><span>1,480 บริการ</span></span></a>
+        <a class="cat" href="#services"><span class="emoji">📈</span><span><b>การตลาดออนไลน์</b><span>970 บริการ</span></span></a>
+        <a class="cat" href="#services"><span class="emoji">🏠</span><span><b>สถาปัตย์ &amp; รับเหมา</b><span>540 บริการ</span></span></a>
+        <a class="cat" href="#services"><span class="emoji">🔮</span><span><b>ดูดวง &amp; โหราศาสตร์</b><span>620 บริการ</span></span></a>
+        <a class="cat" href="#services"><span class="emoji">🧘</span><span><b>ไลฟ์สไตล์ &amp; บริการถึงบ้าน</b><span>380 บริการ</span></span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services" style="background:var(--soft)">
+    <div class="wrap">
+      <div class="head">
+        <h2>บริการแนะนำสำหรับคุณ</h2>
+        <a href="#services">ดูเพิ่มเติม →</a>
+      </div>
+      <div class="grid">
+        <a class="card" href="#get">
+          <div class="cover c1">NW</div>
+          <div class="body">
+            <div class="title">รับทำเว็บไซต์ครบวงจร ตอบกลับไว ส่งงานตรงเวลา</div>
+            <div class="seller">โดย Nok Web Studio</div>
+            <div class="rating">★ 4.9 <small>(212 รีวิว)</small></div>
+            <div class="price"><small>เริ่มต้น</small> ฿4,500</div>
+          </div>
+        </a>
+        <a class="card" href="#get">
+          <div class="cover c2">LM</div>
+          <div class="body">
+            <div class="title">ออกแบบโลโก้ + ชุดเอกลักษณ์แบรนด์ แก้ไขได้ไม่จำกัด</div>
+            <div class="seller">โดย Landim Mark</div>
+            <div class="rating">★ 5.0 <small>(96 รีวิว)</small></div>
+            <div class="price"><small>เริ่มต้น</small> ฿1,800</div>
+          </div>
+        </a>
+        <a class="card" href="#get">
+          <div class="cover c3">VC</div>
+          <div class="body">
+            <div class="title">ตัดต่อวีดีโอ TikTok / Reels สไตล์คุณภาพสูง ส่งใน 24 ชม.</div>
+            <div class="seller">โดย Vim Cut Studio</div>
+            <div class="rating">★ 4.8 <small>(340 รีวิว)</small></div>
+            <div class="price"><small>เริ่มต้น</small> ฿500</div>
+          </div>
+        </a>
+        <a class="card" href="#get">
+          <div class="cover c4">HD</div>
+          <div class="body">
+            <div class="title">เขียนแบบบ้าน 3D + ไฟล์ก่อสร้างครบ โดยสถาปนิก</div>
+            <div class="seller">โดย Housdea Design</div>
+            <div class="rating">★ 4.9 <small>(128 รีวิว)</small></div>
+            <div class="price"><small>เริ่มต้น</small> ฿9,000</div>
+          </div>
+        </a>
+        <a class="card" href="#get">
+          <div class="cover c5">CN</div>
+          <div class="body">
+            <div class="title">เขียนบทความ SEO คุณภาพ ส่งงานตรงเวลา อ่านลื่น</div>
+            <div class="seller">โดย Conneo Team</div>
+            <div class="rating">★ 4.7 <small>(455 รีวิว)</small></div>
+            <div class="price"><small>เริ่มต้น</small> ฿350</div>
+          </div>
+        </a>
+        <a class="card" href="#get">
+          <div class="cover c6">MK</div>
+          <div class="body">
+            <div class="title">ดูแลหน้าเพจ &amp; ลงโฆษณา ครบจบในที่เดียว</div>
+            <div class="seller">โดย Mekko Digital</div>
+            <div class="rating">★ 4.8 <small>(203 รีวิว)</small></div>
+            <div class="price"><small>เริ่มต้น</small> ฿3,000</div>
+          </div>
+        </a>
+        <a class="card" href="#get">
+          <div class="cover c7">DS</div>
+          <div class="body">
+            <div class="title">ดูดวงชะตารายเดือน พร้อมคำแนะนำเชิงปฏิบัติ</div>
+            <div class="seller">โดย Dao Siam</div>
+            <div class="rating">★ 4.9 <small>(1,102 รีวิว)</small></div>
+            <div class="price"><small>เริ่มต้น</small> ฿299</div>
+          </div>
+        </a>
+        <a class="card" href="#get">
+          <div class="cover c8">TR</div>
+          <div class="body">
+            <div class="title">แปลเอกสารไทย-อังกฤษ โดยนักแปลมืออาชีพ</div>
+            <div class="seller">โดย Truelang</div>
+            <div class="rating">★ 5.0 <small>(87 รีวิว)</small></div>
+            <div class="price"><small>เริ่มต้น</small> ฿450</div>
+          </div>
+        </a>
+      </div>
+      <p style="color:var(--muted);font-size:12.5px;margin-top:14px">บริการและรีวิวทั้งหมดข้างบนเป็นข้อมูลตัวอย่างสำหรับเดโมเท่านั้น</p>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="wrap">
+      <div class="head"><h2>จ้างงานง่าย ๆ ใน 3 ขั้นตอน</h2></div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <h3>เลือกหรือโพสต์งาน</h3>
+          <p>ค้นหาบริการที่ตรงกับงานของคุณ หรือโพสต์ความต้องการให้ฟรีแลนซ์ส่งข้อเสนอมาหาคุณ</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h3>เทียบราคาและรีวิว</h3>
+          <p>ดูผลงาน คะแนนรีวิวจริงจากผู้จ้างก่อนหน้า และราคาที่ชัดเจนตั้งแต่ต้น</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h3>จ่ายผ่านระบบกลาง</h3>
+          <p>เงินของคุณถูกถือไว้อย่างปลอดภัย และปล่อยให้ฟรีแลนซ์เมื่องานเสร็จตามข้อตกลง</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="head"><h2>ไว้ใจได้จากตัวเลขจริงในแพลตฟอร์มเดโม</h2></div>
+      <div class="trust">
+        <div><b>12,400</b><span>บริการในระบบ (ตัวอย่าง)</span></div>
+        <div><b>3,800</b><span>ฟรีแลนซ์ที่ผ่านการยืนยัน (ตัวอย่าง)</span></div>
+        <div><b>98.2%</b><span>งานส่งตรงเวลา (ตัวอย่าง)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS -->
+  <section id="reviews" style="background:var(--soft)">
+    <div class="wrap">
+      <div class="head"><h2>ผู้จ้างพูดถึงเรา</h2></div>
+      <div class="review-grid">
+        <div class="review">
+          <div class="stars">★★★★★</div>
+          <p>"อยากได้เว็บร้านกาแฟก่อนเปิดจริง คุยง่าย ส่งงานเร็วกว่ากำหนด ปรับแก้ให้หลายรอบโดยไม่งอแง"</p>
+          <div class="who">— ผู้จ้าง: ร้านกาแฟในเชียงใหม่ (รีวิวตัวอย่าง)</div>
+        </div>
+        <div class="review">
+          <div class="stars">★★★★★</div>
+          <p>"โลโก้ออกมาเกินคาด ชอบที่มีให้เลือก 3 แนว และส่งไฟล์ครบทุกฟอร์แมตจริงตามที่ประกาศ"</p>
+          <div class="who">— ผู้จ้าง: แบรนด์เบเกอรี่ออนไลน์ (รีวิวตัวอย่าง)</div>
+        </div>
+        <div class="review">
+          <div class="stars">★★★★☆</div>
+          <p>"ระบบเงินกลางทำให้กล้าจ้างคนแปลที่ไม่รู้จักมาก่อน งานออกมาเรียบร้อยดี จะกลับมาใช้อีก"</p>
+          <div class="who">— ผู้จ้าง: บริษัทโลจิสติกส์ SME (รีวิวตัวอย่าง)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANDS -->
+  <section id="start">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>มีทักษะ? เริ่มรับงานกับ Werk</h2>
+          <p>ลงประกาศบริการฟรี ได้รับเงินแน่นอนผ่านระบบกลาง ไม่เสียค่าใช้จ่ายล่วงหน้า</p>
+        </div>
+        <a class="btn" href="#get">สมัครขายบริการ</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" style="padding-top:0">
+    <div class="wrap faq">
+      <div class="head"><h2>คำถามที่พบบ่อย</h2></div>
+      <details>
+        <summary>เงินระบบกลางทำงานอย่างไร?</summary>
+        <p>เมื่อคุณจ้างงาน เงินจะถูกถือไว้กับระบบ ไม่ได้ส่งให้ฟรีแลนซ์ทันที หลังงานส่งและคุณกดตรวจรับ เงินจึงถูกโอนให้ผู้ให้บริการ — คุ้มครองทั้งสองฝ่าย</p>
+      </details>
+      <details>
+        <summary>ถ้างานไม่เสร็จตามที่คุยกันทำอย่างไร?</summary>
+        <p>คุณสามารถเปิดเคสกับทีมงานได้ภายในหน้าแชท เราจะตรวจสอบบันทึกการสนทนาและไฟล์งานเพื่อตัดสินเงินคืนตามเงื่อนไขที่ตกลงกันไว้</p>
+      </details>
+      <details>
+        <summary>การใช้งานเสียค่าใช้จ่ายอะไรบ้าง?</summary>
+        <p>การค้นหาและโพสต์งานฟรี แพลตฟอร์มเก็บค่าธรรมเนียมจากยอดงานที่เสร็จสำเร็จเท่านั้น (อัตราตามที่แสดงในหน้าบริการ)</p>
+      </details>
+      <details>
+        <summary>หน้านี้เป็นเว็บจริงหรือไม่?</summary>
+        <p>ไม่ใช่ — Werk เป็นหน้าเดโมเพื่อการศึกษา สร้างขึ้นเพื่อแสดงโครงสร้างหน้าแรกของเว็บจ้างฟรีแลนซ์ ตัวเลข บริการ และรีวิวทั้งหมดเป็นข้อมูลตัวอย่าง</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- GET -->
+  <section id="get">
+    <div class="wrap">
+      <div class="cta-band" style="background:var(--ink)">
+        <div>
+          <h2>พร้อมเริ่มงานแรกแล้วหรือยัง?</h2>
+          <p>ลองค้นหาบริการด้านบน หรือโพสต์งานให้ฟรีแลนซ์หาคุณ</p>
+        </div>
+        <a class="btn" href="#top">เริ่มจ้างงาน</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <h4 style="font-size:18px">werk<span style="color:var(--teal)">.co.th</span></h4>
+        <p style="color:var(--muted);font-size:14px;max-width:300px">แหล่งรวมฟรีแลนซ์คุณภาพครบทุกหมวด (หน้าเดโมเพื่อการศึกษา)</p>
+      </div>
+      <div>
+        <h4>หมวดหมู่</h4>
+        <ul>
+          <li><a href="#services">เว็บไซต์ &amp; แอป</a></li>
+          <li><a href="#services">กราฟิก &amp; โลโก้</a></li>
+          <li><a href="#services">วีดีโอ &amp; ตัดต่อ</a></li>
+          <li><a href="#services">ไลฟ์สไตล์</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>สำหรับผู้จ้าง</h4>
+        <ul>
+          <li><a href="#how">วิธีการใช้งาน</a></li>
+          <li><a href="#faq">ระบบเงินกลาง</a></li>
+          <li><a href="#reviews">รีวิวจากผู้จ้าง</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>สำหรับฟรีแลนซ์</h4>
+        <ul>
+          <li><a href="#start">เริ่มขายบริการ</a></li>
+          <li><a href="#faq">คำถามที่พบบ่อย</a></li>
+          <li><a href="#faq">ช่วยเหลือ</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="demo-note">
+      Werk เป็นหน้าเดโมเพื่อการศึกษา สร้างขึ้นเพื่อศึกษาโครงสร้างหน้าแรกของเว็บจ้างฟรีแลนซ์ ไม่มีความเกี่ยวข้องกับ
+      แพลตฟอร์มใดในตลาดจริง ตัวเลข บริการ ราคา และรีวิวทั้งหมดเป็นข้อมูลตัวอย่าง · © 2026 Werk (ตัวละครสมมติ)
+    </p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // Search: real interaction, honest demo feedback.
+  const form = document.getElementById('searchform');
+  const q = document.getElementById('q');
+  const toast = document.getElementById('toast');
+  let toastTimer;
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const term = q.value.trim();
+    if (!term) {
+      showToast('พิมพ์ชื่อบริการที่ต้องการก่อน เช่น "ทำเว็บไซต์"');
+      q.focus();
+      return;
+    }
+    showToast(`(เดโม) ค้นหา "${term}" — หน้าเว็บจริงจะแสดงรายการบริการที่ตรงกันที่นี่`);
+    q.select();
+  });
+
+  // Category and service links: same honest feedback instead of dead links.
+  document.querySelectorAll('a[href="#services"], a[href="#get"], a[href="#start"]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      const label = link.querySelector('b')?.textContent ?? link.textContent.trim().slice(0, 40);
+      showToast(`(เดโม) ไปยังหน้า: ${label}`);
+    });
+  });
+</script>
+</body>
+</html>
