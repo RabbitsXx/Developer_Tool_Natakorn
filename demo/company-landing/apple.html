@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledgerly — Invoicing that follows up</title>
+<style>
+  /* ============ Apple-style design language ============ */
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+            "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Thai", sans-serif;
+    --dark: #000000;
+    --light: #f5f5f7;
+    --text-dark-bg: #f5f5f7;
+    --text-light-bg: #1d1d1f;
+    --muted-dark: #86868b;
+    --muted-light: #6e6e73;
+    --link-dark: #2997ff;
+    --link-light: #0066cc;
+    --nav-bg: rgba(22, 22, 23, 0.8);
+    --tile-radius: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--dark);
+    color: var(--text-dark-bg);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.47;
+  }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 12px; top: 12px; background: var(--link-dark); color: #fff; padding: 8px 16px; border-radius: 8px; z-index: 100; }
+  a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--link-dark); outline-offset: 3px; border-radius: 4px;
+  }
+
+  /* ============ Global nav ============ */
+  .globalnav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    background: var(--nav-bg);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .globalnav ul {
+    list-style: none; display: flex; align-items: center; justify-content: center;
+    gap: 0; max-width: 1024px; margin: 0 auto; height: 44px; padding: 0 16px;
+  }
+  .globalnav a {
+    color: #f5f5f7cc; text-decoration: none; font-size: 12px; letter-spacing: -.01em;
+    padding: 0 12px; opacity: .92;
+  }
+  .globalnav a:hover { color: #fff; opacity: 1; }
+  .globalnav .brand a { font-weight: 600; font-size: 15px; color: #fff; }
+  .globalnav .cta a { color: var(--link-dark); }
+
+  /* ============ Hero ============ */
+  .hero {
+    min-height: 92vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; padding: 120px 24px 60px;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, #101012 0%, #000 70%);
+  }
+  .hero .eyebrow { font-size: 17px; font-weight: 600; color: var(--link-dark); margin-bottom: 6px; }
+  .hero h1 {
+    font-size: clamp(48px, 9vw, 96px); font-weight: 700; letter-spacing: -.022em;
+    line-height: 1.05; color: #fff;
+  }
+  .hero .tagline {
+    font-size: clamp(21px, 3vw, 28px); font-weight: 500; letter-spacing: .011em;
+    color: var(--muted-dark); margin-top: 10px; max-width: 640px;
+  }
+  .hero .links { margin-top: 26px; display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
+  .pillink { color: var(--link-dark); font-size: 19px; text-decoration: none; }
+  .pillink:hover { text-decoration: underline; }
+  .pillink .chev { font-size: 16px; }
+
+  /* CSS-only "product" visual: a floating invoice card */
+  .hero-visual { margin-top: 64px; perspective: 1200px; }
+  .invoice-card {
+    width: min(420px, 86vw); margin: 0 auto; border-radius: 20px;
+    background: linear-gradient(160deg, #1c1c1e, #101012);
+    border: 1px solid #2c2c2e; padding: 26px 28px; text-align: left;
+    box-shadow: 0 40px 80px -20px rgba(41, 151, 255, 0.15), 0 4px 24px rgba(0,0,0,.6);
+    transform: rotateX(4deg);
+    transition: transform .6s cubic-bezier(.2,.7,.3,1);
+  }
+  .hero-visual:hover .invoice-card { transform: rotateX(0deg) translateY(-4px); }
+  .inv-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 0; border-bottom: 1px solid #2c2c2e; }
+  .inv-row:last-child { border-bottom: 0; }
+  .inv-name { font-size: 15px; font-weight: 600; color: #f5f5f7; }
+  .inv-sub { font-size: 12px; color: var(--muted-dark); }
+  .inv-amt { font-size: 17px; font-weight: 600; color: #f5f5f7; font-variant-numeric: tabular-nums; }
+  .inv-status {
+    font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 99px; letter-spacing: .02em;
+  }
+  .inv-status.paid { background: rgba(52, 199, 89, .16); color: #30d158; }
+  .inv-status.sent { background: rgba(41, 151, 255, .16); color: var(--link-dark); }
+  .inv-status.chasing { background: rgba(255, 159, 10, .16); color: #ff9f0a; }
+  .inv-banner {
+    margin-top: 14px; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500;
+    background: rgba(41, 151, 255, .1); color: var(--link-dark);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .inv-banner .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--link-dark); }
+
+  /* ============ Section blocks (alternating like apple.com) ============ */
+  section.block { padding: 130px 24px; text-align: center; }
+  section.block.dark { background: var(--dark); color: var(--text-dark-bg); }
+  section.block.light { background: var(--light); color: var(--text-light-bg); }
+  .block .kicker { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .dark .kicker { color: var(--link-dark); }
+  .light .kicker { color: var(--link-light); }
+  .block h2 { font-size: clamp(40px, 6.5vw, 64px); font-weight: 700; letter-spacing: -.02em; line-height: 1.07; }
+  .block .sub {
+    font-size: clamp(17px, 2.2vw, 21px); font-weight: 500; margin: 12px auto 0;
+    max-width: 620px; letter-spacing: .008em;
+  }
+  .dark .sub { color: var(--muted-dark); }
+  .light .sub { color: var(--muted-light); }
+  .block .links { margin-top: 22px; display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
+  .dark .pillink { font-size: 17px; }
+  .light .pillink { color: var(--link-light); font-size: 17px; }
+
+  /* ============ Feature tile grid ============ */
+  .tilegrid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    max-width: 1040px; margin: 60px auto 0; padding: 0 24px;
+  }
+  @media (max-width: 760px) { .tilegrid { grid-template-columns: 1fr; } }
+  .tile {
+    background: #1c1c1e; border-radius: var(--tile-radius); padding: 44px 36px; text-align: left;
+    min-height: 300px; display: flex; flex-direction: column; justify-content: flex-start; gap: 8px;
+  }
+  .tile h3 { font-size: 26px; font-weight: 700; letter-spacing: -.015em; color: #fff; }
+  .tile p { font-size: 15px; color: var(--muted-dark); max-width: 40ch; }
+  .tile .tile-link { margin-top: auto; padding-top: 14px; }
+  .tile .pillink { font-size: 15px; }
+
+  /* ============ Claims strip with footnotes ============ */
+  .claims {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+    max-width: 900px; margin: 0 auto; padding: 0 24px;
+  }
+  @media (max-width: 760px) { .claims { grid-template-columns: 1fr; } }
+  .claim b { display: block; font-size: clamp(40px, 6vw, 56px); font-weight: 700; letter-spacing: -.02em; }
+  .dark .claim b { color: #fff; }
+  .claim span { font-size: 14px; color: var(--muted-dark); display: block; margin-top: 4px; }
+  sup.fn { font-size: .55em; font-weight: 600; color: var(--muted-dark); }
+
+  /* ============ Pricing (compare-style) ============ */
+  .compare {
+    max-width: 980px; margin: 56px auto 0; display: grid;
+    grid-template-columns: repeat(3, 1fr); gap: 14px; text-align: center;
+  }
+  @media (max-width: 760px) { .compare { grid-template-columns: 1fr; } }
+  .plan {
+    background: #fff; border-radius: var(--tile-radius); padding: 40px 28px;
+    color: var(--text-light-bg); display: flex; flex-direction: column; align-items: center;
+  }
+  .plan .name { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-light); }
+  .plan .price { font-size: 44px; font-weight: 700; letter-spacing: -.02em; margin: 10px 0 2px; }
+  .plan .per { font-size: 13px; color: var(--muted-light); }
+  .plan ul { list-style: none; margin: 26px 0; flex: 1; }
+  .plan li { font-size: 14px; padding: 7px 0; color: var(--text-light-bg); }
+  .plan li::before { content: "✓"; color: var(--link-light); font-weight: 700; margin-right: 9px; }
+  .plan .pillink { font-size: 15px; }
+  .plan.featured { outline: 2px solid var(--link-light); outline-offset: -2px; }
+  .plan .badge {
+    font-size: 11px; font-weight: 600; color: var(--link-light); letter-spacing: .04em; margin-bottom: 2px;
+  }
+
+  /* ============ Signup ============ */
+  .signup { max-width: 460px; margin: 48px auto 0; text-align: left; }
+  .signup label { display: block; font-size: 14px; font-weight: 500; color: var(--muted-dark); margin-bottom: 8px; }
+  .signup .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .signup input {
+    flex: 1; min-width: 220px; font-size: 17px; padding: 13px 16px; border-radius: 12px;
+    border: 1px solid #424245; background: #1c1c1e; color: #f5f5f7; font-family: var(--font);
+  }
+  .signup input:focus { outline: 2px solid var(--link-dark); outline-offset: 0; border-color: transparent; }
+  .signup button {
+    font-size: 17px; font-weight: 500; padding: 13px 24px; border-radius: 12px;
+    border: 0; background: var(--link-dark); color: #fff; cursor: pointer; font-family: var(--font);
+  }
+  .signup button:hover { background: #0077ed; }
+  .signup .err { color: #ff453a; font-size: 13px; margin-top: 8px; min-height: 1.2em; }
+  .signup .ok { color: #30d158; font-size: 13px; margin-top: 8px; min-height: 1.2em; }
+
+  /* ============ Footnotes & footer ============ */
+  .footnotes {
+    max-width: 980px; margin: 0 auto; padding: 48px 24px 24px;
+    border-top: 1px solid #2c2c2e; font-size: 12px; color: var(--muted-dark); line-height: 1.6;
+  }
+  .footnotes h3 { font-size: 12px; font-weight: 600; color: var(--muted-dark); margin-bottom: 10px; }
+  .footnotes ol { margin-left: 18px; }
+  .footnotes li { margin-bottom: 6px; }
+  footer.site { background: var(--dark); border-top: 1px solid #2c2c2e; padding: 28px 24px 60px; }
+  footer.site .cols {
+    max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+  }
+  @media (max-width: 760px) { footer.site .cols { grid-template-columns: 1fr 1fr; } }
+  footer.site h4 { font-size: 12px; font-weight: 600; color: #f5f5f7; margin-bottom: 10px; }
+  footer.site ul { list-style: none; }
+  footer.site li a { font-size: 12px; color: var(--muted-dark); text-decoration: none; display: block; padding: 4px 0; }
+  footer.site li a:hover { color: #fff; text-decoration: underline; }
+  footer.site .fineprint {
+    max-width: 980px; margin: 36px auto 0; padding-top: 18px; border-top: 1px solid #2c2c2e;
+    font-size: 12px; color: var(--muted-dark);
+  }
+
+  /* ============ Scroll reveal (Apple-style fade-up) ============ */
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.7,.3,1); }
+    .reveal.in { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<nav class="globalnav" aria-label="Global">
+  <ul>
+    <li class="brand"><a href="#top" aria-label="Ledgerly home">▯ Ledgerly</a></li>
+    <li><a href="#reminders">Reminders</a></li>
+    <li><a href="#report">Late-payer report</a></li>
+    <li><a href="#links">Payment links</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li class="cta"><a href="#start">Start free</a></li>
+  </ul>
+</nav>
+
+<main id="main">
+
+  <!-- HERO -->
+  <header class="hero" id="top">
+    <p class="eyebrow">Introducing Ledgerly Follow-up</p>
+    <h1>Invoicing that<br>follows up.</h1>
+    <p class="tagline">Ledgerly sends, tracks, and chases your invoices — and tells you who pays late, before it hurts.</p>
+    <div class="links">
+      <a class="pillink" href="#start">Get started <span class="chev">›</span></a>
+      <a class="pillink" href="#pricing">View pricing <span class="chev">›</span></a>
+    </div>
+    <div class="hero-visual reveal">
+      <div class="invoice-card" role="img" aria-label="Preview of the Ledgerly invoice list showing paid, sent, and chasing invoices with an automatic reminder banner">
+        <div class="inv-row">
+          <div><div class="inv-name">Northwind Studio</div><div class="inv-sub">Invoice #2041 · due in 3 days</div></div>
+          <div style="text-align:right"><div class="inv-amt">$1,850</div><div class="inv-status chasing">Reminder 2 sent</div></div>
+        </div>
+        <div class="inv-row">
+          <div><div class="inv-name">Hale &amp; Co Design</div><div class="inv-sub">Invoice #2039 · paid Tuesday</div></div>
+          <div style="text-align:right"><div class="inv-amt">$3,200</div><div class="inv-status paid">Paid</div></div>
+        </div>
+        <div class="inv-row">
+          <div><div class="inv-name">Marisol Films</div><div class="inv-sub">Invoice #2042 · sent today</div></div>
+          <div style="text-align:right"><div class="inv-amt">$940</div><div class="inv-status sent">Sent</div></div>
+        </div>
+        <div class="inv-banner"><span class="dot"></span> Automatic reminder scheduled for Friday, 9:00 — tone: polite</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- REMINDERS -->
+  <section class="block dark" id="reminders">
+    <div class="reveal">
+      <p class="kicker">Follow-up</p>
+      <h2>Chases. Politely.</h2>
+      <p class="sub">Reminders go out on your rules — gentle at day 7, firmer at day 14. You approve the tone once. Your customers are never surprised.</p>
+      <div class="links">
+        <a class="pillink" href="#start">Start free <span class="chev">›</span></a>
+        <a class="pillink" href="#pricing">View pricing <span class="chev">›</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- LATE-PAYER REPORT -->
+  <section class="block light" id="report">
+    <div class="reveal">
+      <p class="kicker">Ledgerly Intelligence</p>
+      <h2>Knows who pays late.</h2>
+      <p class="sub">Every invoice feeds a payment history per customer — so the Tuesday report shows exactly who needs a call, and who just needs a nudge.<sup class="fn">1</sup></p>
+      <div class="links">
+        <a class="pillink" href="#start">See it on your invoices <span class="chev">›</span></a>
+      </div>
+      <div class="claims" style="margin-top:70px">
+        <div class="claim"><b>31%<sup class="fn">1</sup></b><span>paid within 3 days of a reminder</span></div>
+        <div class="claim"><b>6 hrs<sup class="fn">1</sup></b><span>median bookkeeping time saved per month</span></div>
+        <div class="claim"><b>$0<sup class="fn">2</sup></b><span>cost of the Free plan — it does not expire</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAYMENT LINKS + SETUP TILES -->
+  <section class="block dark" id="links">
+    <div class="reveal">
+      <p class="kicker">Getting paid</p>
+      <h2>A link. A tap. Done.</h2>
+      <p class="sub">Every invoice carries a hosted payment link — no card reader, no setup. Payments settle and mark themselves paid.</p>
+    </div>
+    <div class="tilegrid">
+      <div class="tile reveal">
+        <h3>Connected, read-only.</h3>
+        <p>Ledgerly watches for the matching payment and marks the invoice settled. It can see payments — it cannot touch your money.</p>
+        <div class="tile-link"><a class="pillink" href="#start">Connect your bank <span class="chev">›</span></a></div>
+      </div>
+      <div class="tile reveal">
+        <h3>First invoice in minutes.</h3>
+        <p>Start from a template or your own layout. No dashboards to configure on day one, no training session required.</p>
+        <div class="tile-link"><a class="pillink" href="#start">Send one now <span class="chev">›</span></a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="block dark" id="pricing">
+    <div class="reveal">
+      <p class="kicker">Pricing</p>
+      <h2>Pick a plan. Or don't.</h2>
+      <p class="sub">Per workspace, billed monthly. Every plan includes reminders, payment links, and accountant export. Cancel anytime.</p>
+    </div>
+    <div class="compare">
+      <div class="plan reveal">
+        <div class="name">Free</div>
+        <div class="price">$0</div>
+        <div class="per">forever — it does not expire<sup class="fn">3</sup></div>
+        <ul>
+          <li>20 invoices / month</li>
+          <li>Basic reminder schedule</li>
+          <li>Payment links</li>
+        </ul>
+        <a class="pillink" href="#start" style="color:var(--link-light)">Start free ›</a>
+      </div>
+      <div class="plan featured reveal">
+        <div class="badge">Most popular</div>
+        <div class="name">Studio</div>
+        <div class="price">$12</div>
+        <div class="per">per workspace / month</div>
+        <ul>
+          <li>200 invoices / month</li>
+          <li>Custom reminder rules</li>
+          <li>Late-payer report</li>
+        </ul>
+        <a class="pillink" href="#start" style="color:var(--link-light)">Choose Studio ›</a>
+      </div>
+      <div class="plan reveal">
+        <div class="name">Firm</div>
+        <div class="price">$39</div>
+        <div class="per">per workspace / month</div>
+        <ul>
+          <li>Unlimited invoices</li>
+          <li>Escalation schedules</li>
+          <li>Late-payer report</li>
+        </ul>
+        <a class="pillink" href="#start" style="color:var(--link-light)">Choose Firm ›</a>
+      </div>
+    </div>
+    <p class="sub" style="max-width:560px;font-size:14px;margin-top:28px">
+      <strong style="color:#f5f5f7">What Ledgerly doesn't do:</strong> it is not a full double-entry accounting suite. It handles receivables and reminders; it does not replace your bookkeeper.
+    </p>
+  </section>
+
+  <!-- START -->
+  <section class="block dark" id="start">
+    <div class="reveal">
+      <p class="kicker">Get started</p>
+      <h2>Try one real invoice.</h2>
+      <p class="sub">We'll email the setup guide. No card. No trial countdown. The Free plan doesn't expire.</p>
+      <form class="signup" novalidate>
+        <label for="email">Work email</label>
+        <div class="row">
+          <input id="email" name="email" type="email" autocomplete="email" required
+                 placeholder="you@studio.com" aria-describedby="email-err">
+          <button type="submit">Email me the guide</button>
+        </div>
+        <div class="err" id="email-err" role="alert"></div>
+        <div class="ok" id="email-ok" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTNOTES -->
+  <div class="footnotes">
+    <h3>Footnotes</h3>
+    <ol>
+      <li>Figures are illustrative for this demo page, sized to be modest and checkable. A real deployment replaces them with measured cohort data and a dated methodology note.</li>
+      <li>The Free plan is free while Ledgerly exists; this demo page is a fictional company, so "forever" means "for as long as the fiction does."</li>
+      <li>No trial countdown is used anywhere on this page by design.</li>
+    </ol>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="cols">
+    <div>
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#reminders">Reminders</a></li>
+        <li><a href="#report">Late-payer report</a></li>
+        <li><a href="#links">Payment links</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Plans</h4>
+      <ul>
+        <li><a href="#pricing">Free</a></li>
+        <li><a href="#pricing">Studio</a></li>
+        <li><a href="#pricing">Firm</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#top">About Ledgerly</a></li>
+        <li><a href="#top">Careers</a></li>
+        <li><a href="#top">Newsroom</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#top">Terms</a></li>
+        <li><a href="#top">Privacy</a></li>
+        <li><a href="#top">Accessibility</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="fineprint">
+    Ledgerly is a fictional company created for a design comparison. This page imitates a well-known
+    design language for an internal demo; it is not affiliated with, or endorsed by, any hardware company.
+    © 2026 Ledgerly (fictional). All invoices shown are illustrative.
+  </div>
+</footer>
+
+<script>
+  // Apple-style scroll reveal: fade-up once, never blocking reduced-motion users.
+  const revealables = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          observer.unobserve(entry.target);
+        }
+      }
+    }, { threshold: 0.18 });
+    revealables.forEach((el) => observer.observe(el));
+  } else {
+    revealables.forEach((el) => el.classList.add('in'));
+  }
+
+  // Honest validation with a real error path (no email is actually sent from this demo).
+  const form = document.querySelector('.signup');
+  const input = document.getElementById('email');
+  const err = document.getElementById('email-err');
+  const ok = document.getElementById('email-ok');
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    ok.textContent = '';
+    const value = input.value.trim();
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+    if (!valid) {
+      err.textContent = 'Enter a valid email address, e.g. you@studio.com.';
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
+      return;
+    }
+    err.textContent = '';
+    input.removeAttribute('aria-invalid');
+    ok.textContent = 'Guide on its way to ' + value + '. (Demo page — no email is actually sent.)';
+    form.reset();
+  });
+
+  input.addEventListener('input', () => {
+    if (err.textContent) { err.textContent = ''; input.removeAttribute('aria-invalid'); }
+  });
+</script>
+</body>
+</html>
