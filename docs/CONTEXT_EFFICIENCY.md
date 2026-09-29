@@ -2,6 +2,42 @@
 
 The goal is not to minimize context at all costs. The goal is to load the smallest amount of trustworthy context required to make a correct change.
 
+## Repository hygiene is context efficiency
+
+Agent slowness and token waste are usually repo-state problems, not model problems. Before blaming the model, measure:
+
+```bash
+git status --short | wc -l          # dirty/untracked count the agent re-reads every session
+git ls-files --others | wc -l       # untracked files that pollute glob/search results
+du -sk <untracked dirs>             # scratch/output weight sitting in the worktree
+```
+
+Known failure pattern (real case, 2026-09): a project accumulated 722 untracked scratch files (~103MB) with no ignore rules, plus three fully duplicated code folders left by an old migration. Every `git status`, glob, and code search dragged scratch names into context, and tsc/lint processed the duplicated folders twice. One pre-existing lint error inside a scratch dir re-tripped in every session.
+
+Fix in this order:
+
+1. Ignore scratch/output directories first (`tmp/`, `output/`, `artifacts/`, runtime caches, root-level logs). This alone often shrinks git status and search noise immediately.
+2. `git rm --cached` any tracked build artifacts/logs; then delete the local files if they are stale.
+3. Before deleting a suspected duplicate folder: grep the codebase for imports of that path, compare files with `cmp`, and keep the newer/diverged copy. Then `git rm -r` the stale copy and remove its now-dead ignore entries from tsconfig/eslint.
+4. Add scratch directories to lint ignores so stale errors in them stop failing every session's `npm run lint`.
+5. Verify with typecheck + lint after the cleanup; the expected result is fewer errors than before, not new ones.
+
+## Handoff files that stay small
+
+A rolling implementation-notes file grows unbounded and becomes a fixed tax: every resuming session reads all of it. Keep instead:
+
+- a `<2KB` quick-handoff doc as the default entry point: current state, missing inputs, hard rules, known-failing checks
+- the long notes file marked as read-only history, consulted by section only
+- use the five-line handoff contract (deviations, most-likely-revisit, edge cases, verification, next session) for summaries
+
+## MCP response payloads
+
+For MCP servers exposed to chat clients:
+
+- Do not duplicate the same metadata JSON in both `content[].text` and `structuredContent`. Keep one authoritative copy in `structuredContent` and make the text block a single short human-readable line.
+- Return binaries with proper content types (`image`, `resource` with base64 blob), never as raw text, or clients may read megabytes into model context.
+- Keep tool `description` fields tight; they are read on every tool discovery, not once.
+
 ## Default retrieval order
 
 1. Read applicable instructions and project context.
