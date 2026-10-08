@@ -10,12 +10,19 @@ const result = {};
 try {
   const blank = path.join(root, 'blank');
   await mkdir(path.join(blank, 'docs'), { recursive: true });
+  await mkdir(path.join(blank, '.github'), { recursive: true });
   // Bootstrap-owned safety and continuity files are part of the kit contract.
   await writeFile(path.join(blank, 'START_PROMPT.md'), 'kit prompt');
   await writeFile(path.join(blank, 'AGENTS.md'), 'kit rules');
+  await writeFile(path.join(blank, 'CLAUDE.md'), 'Read AGENTS.md first');
+  await writeFile(path.join(blank, 'GEMINI.md'), 'Read AGENTS.md first');
+  await writeFile(path.join(blank, '.github', 'copilot-instructions.md'), 'Read AGENTS.md first');
+  await writeFile(path.join(blank, 'docs', 'run.md'), 'kit run instructions');
   await writeFile(path.join(blank, 'PROJECT_CONTEXT.md'), 'kit context');
   let inspection = await inspectProject(blank);
-  assert.equal(inspection.mode, 'NEW_PROJECT');
+  assert.equal(inspection.mode, 'NEW_PROJECT', JSON.stringify({ markers: inspection.detected.markers, nonKitTopLevel: inspection.detected.nonKitTopLevel }));
+  assert.equal(inspection.profile.primary, 'general');
+  assert(!inspection.profile.items.some((profile) => profile.id === 'content-docs'));
   const blankState = buildProjectState(inspection, new Date('2026-01-01T00:00:00Z'));
   assert.equal(blankState.project.setupStatus, 'awaiting_product_requirements');
   assert(blankState.pendingDecisions.includes('product_requirements_before_stack_selection'));
@@ -28,6 +35,47 @@ try {
   result.newProject = 'PASS';
   result.resumeBlankProject = 'PASS';
   result.idempotentBlankState = 'PASS';
+
+  const profileCases = [
+    { name: 'web', expected: 'web-app', files: { 'package.json': JSON.stringify({ dependencies: { next: '^15.0.0', react: '^19.0.0' } }), 'app/page.tsx': 'export default function Page() {}' } },
+    { name: 'python-api', expected: 'api-service', files: { 'requirements.txt': 'fastapi==0.1\n', 'main.py': 'from fastapi import FastAPI\n' } },
+    { name: 'python-script', expected: 'script-automation', files: { 'requirements.txt': 'requests==2.0\n', 'main.py': 'print("hello")\n' } },
+    { name: 'data', expected: 'data-analysis', files: { 'requirements.txt': 'pandas==2.0\n', 'data/sample.csv': 'name,value\nprivate,row\n' } },
+    { name: 'docs-only', expected: 'content-docs', files: { 'docs/guide.md': '# Guide\n', 'docs/reference.docx': 'not opened by the detector', 'docs/faq.md': '# FAQ\n' } },
+  ];
+  for (const profileCase of profileCases) {
+    const target = path.join(root, profileCase.name);
+    for (const [relative, content] of Object.entries(profileCase.files)) {
+      const file = path.join(target, relative);
+      await mkdir(path.dirname(file), { recursive: true });
+      await writeFile(file, content);
+    }
+    const profileInspection = await inspectProject(target);
+    assert.equal(profileInspection.profile.primary, profileCase.expected, `${profileCase.name} profile`);
+    assert(profileInspection.profile.items.some((profile) => profile.primary && profile.id === profileCase.expected));
+    for (const matched of profileInspection.profile.items) assert(matched.definitionOfDone.length >= 3);
+  }
+  result.profileDetection = 'PASS';
+  result.bootstrapFilesDoNotCreateDocsProfile = 'PASS';
+
+  const dataTarget = path.join(root, 'data');
+  const overlayFile = path.join(dataTarget, '.ai-kit', 'overlays', 'business-rules-example', 'OVERLAY.md');
+  await mkdir(path.dirname(overlayFile), { recursive: true });
+  await writeFile(overlayFile, '---\nname: business-rules-example\n---\nRules\n');
+  const beforeOverlay = await inspectProject(dataTarget);
+  assert.equal(beforeOverlay.profile.primary, 'data-analysis');
+  assert(beforeOverlay.availableCapabilities.includes('overlay:business-rules-example'));
+  assert.equal(beforeOverlay.driftDetected, false);
+  result.overlayDetection = 'PASS';
+
+  const workflowProject = path.join(root, 'workflow-project');
+  await mkdir(path.join(workflowProject, '.github', 'workflows'), { recursive: true });
+  await writeFile(path.join(workflowProject, '.github', 'workflows', 'ci.yml'), 'name: CI\n');
+  const workflowInspection = await inspectProject(workflowProject);
+  assert(workflowInspection.detected.markers.includes('.github/workflows'));
+  assert.equal(workflowInspection.detected.capabilities.infrastructure, true);
+  assert(workflowInspection.detected.capabilities.remoteCi);
+  result.workflowMarkerDetection = 'PASS';
 
   const existing = path.join(root, 'existing');
   await mkdir(existing, { recursive: true });

@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)][string]$TargetPath
+    [Parameter(Mandatory = $true)][string]$TargetPath,
+    [string]$OverlayPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,7 +25,10 @@ $copies = @(
     @{ Source = 'repomix.config.json'; Destination = 'repomix.config.json' },
     @{ Source = 'repomixignore'; Destination = '.repomixignore' },
     @{ Source = 'policy.json'; Destination = '.ai-kit\policy.json' },
-    @{ Source = 'memory\README.md'; Destination = '.ai-kit\memory\README.md' }
+    @{ Source = 'memory\README.md'; Destination = '.ai-kit\memory\README.md' },
+    @{ Source = 'agent-pointers\CLAUDE.md'; Destination = 'CLAUDE.md' },
+    @{ Source = 'agent-pointers\GEMINI.md'; Destination = 'GEMINI.md' },
+    @{ Source = 'agent-pointers\.github\copilot-instructions.md'; Destination = '.github\copilot-instructions.md' }
 )
 
 Write-Output "Bootstrapping AI project files into: $target"
@@ -54,6 +58,20 @@ if (-not (Test-Path -LiteralPath $syncScript)) {
 
 & node $syncScript --target $target
 if ($LASTEXITCODE -ne 0) { throw 'Agent Skills sync failed.' }
+
+$runtimeScript = Join-Path $kitRoot 'scripts\sync-runtime.mjs'
+if (-not (Test-Path -LiteralPath $runtimeScript)) {
+    throw 'Runtime sync script is missing.'
+}
+& node $runtimeScript --target $target
+if ($LASTEXITCODE -ne 0) { throw 'Runtime sync failed.' }
+
+if (-not $OverlayPath -and $env:AI_KIT_OVERLAY_DIR) { $OverlayPath = $env:AI_KIT_OVERLAY_DIR }
+if ($OverlayPath) {
+    $overlayScript = Join-Path $kitRoot 'scripts\sync-overlays.mjs'
+    & node $overlayScript --source $OverlayPath --target $target
+    if ($LASTEXITCODE -ne 0) { throw 'Overlay sync failed.' }
+}
 
 $setupScript = Join-Path $kitRoot 'scripts\setup-project.mjs'
 if (Test-Path -LiteralPath $setupScript) {

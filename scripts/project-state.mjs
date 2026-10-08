@@ -4,10 +4,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const STATE_SCHEMA_VERSION = 1;
-const KIT_VERSION = 4;
+const KIT_VERSION = 5;
 const KIT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SKILL_ENTRY = 'SKILL.md';
-const SKILL_PACKS = await loadSkillPacks();
+const MANIFEST = await readJson(path.join(KIT_ROOT, 'toolchain.json')) ?? {};
+const SKILL_PACKS = Array.isArray(MANIFEST.skills?.packs) ? MANIFEST.skills.packs : [];
+const PROFILE_CONFIG = MANIFEST.profiles ?? { default: 'general', items: [] };
+const PROFILES = Array.isArray(PROFILE_CONFIG.items) ? PROFILE_CONFIG.items : [];
+const DEFAULT_PROFILE = PROFILE_CONFIG.default ?? 'general';
+const OVERLAY_DIR = MANIFEST.overlays?.path ?? '.ai-kit/overlays';
+const OVERLAY_ENTRY = MANIFEST.overlays?.entry ?? 'OVERLAY.md';
 
 // Server-side dependencies that indicate the project exposes an HTTP API of its own.
 const HTTP_SERVER_DEPS = [
@@ -17,12 +23,10 @@ const HTTP_SERVER_DEPS = [
 const MOBILE_DEPS = ['expo', 'react-native', '@react-navigation/native', '@react-navigation/native-stack', 'flutter'];
 const INFRA_MARKERS = ['Dockerfile', 'docker-compose.yml', 'docker-compose.yaml', 'terraform', 'pulumi', 'ansible', '.github/workflows'];
 const PYTHON_API_RE = /(fastapi|flask|django|starlette|litestar|falcon|sanic|tornado|bottle|aiohttp)/i;
-
-async function loadSkillPacks() {
-  const manifest = await readJson(path.join(KIT_ROOT, 'toolchain.json'));
-  const packs = manifest?.skills?.packs;
-  return Array.isArray(packs) ? packs : [];
-}
+const IGNORED_SCAN_DIRS = new Set(['.ai-kit', '.git', '.hg', '.svn', 'node_modules', 'vendor', 'dist', 'build', 'target', '.next', '.venv', 'venv', '__pycache__', '.cache']);
+const DOCUMENT_EXTENSIONS = new Set(['.md', '.mdx', '.txt', '.rst', '.adoc', '.doc', '.docx', '.odt', '.pdf', '.rtf']);
+const DATA_EXTENSIONS = new Set(['.csv', '.tsv', '.xlsx', '.xls', '.parquet', '.jsonl', '.ndjson', '.feather', '.arrow', '.sav', '.dta']);
+const SOURCE_EXTENSIONS = new Set(['.py', '.pyw', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.sh', '.ps1', '.rb', '.go', '.rs', '.php', '.java', '.cs']);
 
 function skillEntryMarker(pack) {
   return `${pack.bootstrapPath}/${pack.entry ?? SKILL_ENTRY}`;
@@ -37,6 +41,14 @@ async function detectHttpApi(target, deps, markers) {
       await readText(path.join(target, 'Pipfile')),
     ].join('\n');
     if (PYTHON_API_RE.test(text)) return true;
+  }
+  if (markers.has('go.mod')) {
+    const text = await readText(path.join(target, 'go.mod'));
+    if (/(github\.com\/(gin-gonic\/gin|labstack\/echo|gofiber\/fiber|go-chi\/chi|gorilla\/mux)|github\.com\/julienschmidt\/httprouter)/i.test(text)) return true;
+  }
+  if (markers.has('Cargo.toml')) {
+    const text = await readText(path.join(target, 'Cargo.toml'));
+    if (/\b(axum|actix-web|rocket|warp|poem|tide)\b/i.test(text)) return true;
   }
   for (const relative of ['src/app/api', 'app/api', 'src/pages/api', 'pages/api', 'api', 'routes']) {
     if (await exists(path.join(target, relative))) return true;
@@ -163,6 +175,68 @@ function detectCapabilities(deps, markers, pkg) {
   return { skillPacks, browserE2E, accessibility, codeHealth, gitHooks, backgroundJobs, observability, deployment, remoteCi, mobile, infrastructure, qualityScripts };
 }
 
+async function scanFileExtensions(target) {
+  const maxDepth = 3;
+  const maxEntries = 2000;
+  const files = [];
+  let entriesSeen = 0;
+  let truncated = false;
+  async function visit(directory, relativeDirectory, depth) {
+    if (depth > maxDepth || entriesSeen >= maxEntries) {
+      truncated = true;
+      return;
+    }
+    let entries;
+    try { entries = await readdir(directory, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      entriesSeen += 1;
+      if (entriesSeen > maxEntries) {
+        truncated = true;
+        return;
+      }
+      const relative = relativeDirectory ? path.join(relativeDirectory, entry.name) : entry.name;
+      if (entry.isDirectory()) {
+        if (!IGNORED_SCAN_DIRS.has(entry.name)) await visit(path.join(directory, entry.name), relative, depth + 1);
+      } else if (entry.isFile()) {
+        const normalized = relative.split(path.sep).join('/');
+        const bootstrapOwned = new Set(['START_PROMPT.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'PROJECT_CONTEXT.md', 'docs/run.md', '.github/copilot-instructions.md']);
+        if (bootstrapOwned.has(normalized)) continue;
+        files.push({ name: entry.name, path: normalized, extension: path.extname(entry.name).toLowerCase() });
+      }
+      if (entriesSeen >= maxEntries) {
+        truncated = true;
+        return;
+      }
+    }
+  }
+  await visit(target, '', 0);
+  return { files, extensions: [...new Set(files.map((file) => file.extension).filter(Boolean))].sort(), entriesSeen, truncated };
+}
+
+async function detectOverlays(target) {
+  const overlayRoot = path.join(target, ...OVERLAY_DIR.split('/'));
+  let entries = [];
+  try { entries = await readdir(overlayRoot, { withFileTypes: true }); } catch { return []; }
+  const overlays = [];
+  for (const entry of entries) {
+    if (entry.isDirectory() && await exists(path.join(overlayRoot, entry.name, OVERLAY_ENTRY))) overlays.push(entry.name);
+  }
+  return overlays.sort();
+}
+
+function matchProfiles(projectTraits) {
+  const specific = PROFILES.filter((profile) => profile.id !== DEFAULT_PROFILE && (profile.traits ?? []).some((trait) => projectTraits[trait]));
+  const effective = specific.length ? specific : PROFILES.filter((profile) => profile.id === DEFAULT_PROFILE);
+  return {
+    primary: effective[0]?.id ?? DEFAULT_PROFILE,
+    items: effective.map((profile, index) => ({
+      id: profile.id,
+      primary: index === 0,
+      definitionOfDone: [...(profile.definitionOfDone ?? [])],
+    })),
+  };
+}
+
 function stableArchitecture(detected) {
   return {
     runtime: detected.runtime,
@@ -194,6 +268,7 @@ export async function inspectProject(targetPath) {
     'pyproject.toml', 'requirements.txt', 'Pipfile', 'poetry.lock', 'Cargo.toml', 'go.mod',
     'composer.json', 'Gemfile', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'deno.json', 'Dockerfile',
     'docker-compose.yml', 'docker-compose.yaml', 'terraform', 'pulumi', 'ansible', 'android', 'ios', 'app.json', 'app.config.js', 'app.config.ts',
+    '.github/workflows',
     'next.config.js', 'next.config.mjs', 'next.config.ts', 'vite.config.js', 'vite.config.ts',
     ...SKILL_PACKS.map(skillEntryMarker), 'knip.json', 'knip.jsonc', 'knip.ts', 'lefthook.yml', 'lefthook.yaml',
     'src', 'app', 'pages', 'public', 'index.html',
@@ -203,14 +278,22 @@ export async function inspectProject(targetPath) {
 
   const pkg = markers.has('package.json') ? await readJson(path.join(target, 'package.json')) : null;
   const deps = dependencyMap(pkg);
+  const fileScan = await scanFileExtensions(target);
+  const overlays = await detectOverlays(target);
   const envExample = await readText(path.join(target, '.env.example'));
   const previousState = await readJson(path.join(target, '.ai-kit', 'project.json'));
   const topLevelNames = new Set(await readdir(target).catch(() => []));
   const kitOnlyNames = new Set([
-    'START_PROMPT.md', 'AGENTS.md', 'PROJECT_CONTEXT.md', '.env.example', '.gitignore', '.editorconfig',
-    'repomix.config.json', '.repomixignore', '.ai-kit', 'docs',
+    'START_PROMPT.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'PROJECT_CONTEXT.md', '.env.example', '.gitignore', '.editorconfig',
+    'repomix.config.json', '.repomixignore', '.ai-kit', '.github',
   ]);
-  const nonKitTopLevel = [...topLevelNames].filter((name) => !kitOnlyNames.has(name) && !name.startsWith('.DS_Store'));
+  const hasUserDocs = fileScan.files.some((file) => file.path.startsWith(`docs${path.sep}`) || file.path.startsWith('docs/'));
+  const hasNonPointerGithubFiles = fileScan.files.some((file) => file.path.startsWith(`.github${path.sep}`) || file.path.startsWith('.github/'));
+  const nonKitTopLevel = [...topLevelNames].filter((name) => {
+    if (name === 'docs' && !hasUserDocs) return false;
+    if (name === '.github' && !hasNonPointerGithubFiles) return false;
+    return !kitOnlyNames.has(name) && !name.startsWith('.DS_Store');
+  });
   const kitOnlyMarkers = new Set(['.github/workflows', ...SKILL_PACKS.map(skillEntryMarker)]);
   const meaningfulMarkers = [...markers].filter((name) => !kitOnlyMarkers.has(name));
   const initialDetectedMode = meaningfulMarkers.length === 0 && nonKitTopLevel.length === 0 ? 'NEW_PROJECT' : 'EXISTING_PROJECT';
@@ -222,6 +305,7 @@ export async function inspectProject(targetPath) {
     packageManager,
     database: detectDatabase(deps, envExample),
     capabilities: detectCapabilities(deps, markers, pkg),
+    fileScan: { extensions: fileScan.extensions, truncated: fileScan.truncated },
     markers: [...markers].sort(),
     nonKitTopLevel: nonKitTopLevel.sort(),
   };
@@ -242,6 +326,7 @@ export async function inspectProject(targetPath) {
     detected.capabilities.infrastructure ? 'infrastructure' : null,
     ...detected.database.providers,
     ...detected.database.accessLayers,
+    ...overlays.map((name) => `overlay:${name}`),
   ].filter(Boolean);
 
   const potentiallyUseful = [];
@@ -251,7 +336,17 @@ export async function inspectProject(targetPath) {
     'database': detected.database.providers.length > 0 || detected.database.accessLayers.length > 0,
     'mobile': detected.capabilities.mobile,
     'infrastructure': detected.capabilities.infrastructure,
+    'script-project': fileScan.files.some((file) => SOURCE_EXTENSIONS.has(file.extension))
+      && !['nextjs', 'nuxt', 'astro', 'remix', 'vite', 'react'].includes(detected.framework)
+      && !(await detectHttpApi(target, deps, markers))
+      && !detected.capabilities.mobile,
+    'data-project': fileScan.files.some((file) => DATA_EXTENSIONS.has(file.extension))
+      || hasAny(deps, ['pandas', 'polars', 'pyarrow', 'numpy', 'duckdb']),
+    'docs-project': fileScan.files.filter((file) => DOCUMENT_EXTENSIONS.has(file.extension)).length >= 3,
   };
+  const profile = matchProfiles(projectTraits);
+  detected.profiles = profile.items.map((item) => item.id);
+  detected.capabilities.overlays = overlays;
   for (const pack of SKILL_PACKS) {
     const capability = `${pack.id}-skill-pack`;
     if (!detected.capabilities.skillPacks.includes(capability) && (pack.recommendFor ?? []).some((tag) => projectTraits[tag])) {
@@ -282,6 +377,8 @@ export async function inspectProject(targetPath) {
     driftDetected,
     availableCapabilities: [...new Set(availableCapabilities)],
     potentiallyUsefulCapabilities: [...new Set(potentiallyUseful)],
+    profile,
+    overlays,
     pendingDecisions,
   };
 }
@@ -301,6 +398,7 @@ export function buildProjectState(inspection, now = new Date()) {
     project: {
       initialMode: previous?.project?.initialMode ?? inspection.initialDetectedMode,
       setupStatus: inspection.initialDetectedMode === 'NEW_PROJECT' ? 'awaiting_product_requirements' : 'ready_for_agent',
+      profile: inspection.profile,
     },
     detected: inspection.detected,
     architectureFingerprint: inspection.architectureFingerprint,

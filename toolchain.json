@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "name": "Ultimate VibeCoder Ecosystem",
   "bootstrap": {
     "startPrompt": "START_PROMPT.md",
@@ -23,13 +23,46 @@
     "gitHook": "lefthook.yml",
     "rule": "Run both after changing kit files, templates, manifest contracts, or bootstrap scripts; both must report ok: true. The repository-local Lefthook pre-commit guard runs both automatically once enabled with `npx lefthook install`."
   },
+  "runtime": {
+    "destination": ".ai-kit/bin",
+    "syncScript": "scripts/sync-runtime.mjs",
+    "files": ["policy-check.mjs", "run-safe.mjs", "memory.mjs", "metrics.mjs"],
+    "rule": "Install the self-contained safety and session helpers into each target project; preserve existing copies unless --update is explicit."
+  },
+  "profiles": {
+    "default": "general",
+    "rule": "A profile describes the kind of work, not the stack. The detector records its primary match and every matched profile's definitionOfDone in project state. Profiles never install dependencies.",
+    "knownTraits": ["web-framework", "http-api", "script-project", "data-project", "docs-project", "mobile", "infrastructure"],
+    "items": [
+      { "id": "general", "default": true, "traits": [], "summary": "General purpose work without a more specific detected profile.", "summaryTh": "งานทั่วไปที่ยังไม่ตรงกับโปรไฟล์เฉพาะ", "definitionOfDone": ["Confirm the user goal and constraints.", "Make the smallest complete change and preserve existing work.", "Run relevant checks and report their actual results."] },
+      { "id": "web-app", "traits": ["web-framework"], "summary": "Browser-facing applications and web user experiences.", "summaryTh": "แอปและประสบการณ์ใช้งานบนเว็บ", "definitionOfDone": ["Verify the changed route or browser flow.", "Check responsive and accessible behavior when applicable.", "Run relevant tests and build checks; report any skipped verification."] },
+      { "id": "api-service", "traits": ["http-api"], "summary": "HTTP services, APIs, and backend request workflows.", "summaryTh": "บริการ HTTP, API และระบบ backend", "definitionOfDone": ["Exercise success and error responses.", "Check authorization boundaries for protected behavior.", "Run service tests and report actual verification evidence."] },
+      { "id": "script-automation", "traits": ["script-project"], "summary": "Scripts, command-line tools, and repeatable automation.", "summaryTh": "สคริปต์ เครื่องมือ command line และ automation", "definitionOfDone": ["Run the command on representative inputs, including an edge case.", "Check repeatability or idempotency when the task can be rerun.", "Report the exact command and outcome; do not claim unrun cases passed."] },
+      { "id": "data-analysis", "traits": ["data-project"], "summary": "Data processing, analysis, and reproducible reporting.", "summaryTh": "การประมวลผล วิเคราะห์ และรายงานข้อมูล", "definitionOfDone": ["Inspect input shape and handle malformed or missing values explicitly.", "Verify calculations against an independent check or known case.", "Keep source data unchanged and disclose assumptions and exclusions."] },
+      { "id": "content-docs", "traits": ["docs-project"], "summary": "Documentation, content, and operational writing work.", "summaryTh": "งานเอกสาร เนื้อหา และคู่มือปฏิบัติงาน", "definitionOfDone": ["Use only supplied or verified facts and mark unknowns clearly.", "Check instructions, links, and examples for consistency.", "Review the final document for completeness and intended audience."] },
+      { "id": "mobile-app", "traits": ["mobile"], "summary": "Native and cross-platform mobile applications.", "summaryTh": "แอปมือถือ native และ cross-platform", "definitionOfDone": ["Check platform-specific lifecycle and permission behavior.", "Verify offline, loading, and failure states when relevant.", "Run available device or simulator checks and report coverage limits."] },
+      { "id": "infrastructure", "traits": ["infrastructure"], "summary": "Infrastructure, delivery pipelines, and operational systems.", "summaryTh": "Infrastructure, pipeline และระบบปฏิบัติการ", "definitionOfDone": ["Review the plan and blast radius before applying changes.", "Validate configuration and deployment or rollback behavior.", "Run relevant infrastructure checks and report unverified environments."] }
+    ]
+  },
+  "overlays": {
+    "path": ".ai-kit/overlays",
+    "entry": "OVERLAY.md",
+    "template": "templates/overlay/OVERLAY.md",
+    "syncScript": "scripts/sync-overlays.mjs",
+    "rule": "Overlays may add domain-specific rules, but can never relax security, policy, or verification requirements."
+  },
+  "agentPointers": {
+    "canonical": "AGENTS.md",
+    "files": ["CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md"],
+    "rule": "AGENTS.md is the single source of project instructions; agent-specific files are short pointers to it."
+  },
   "skills": {
     "spec": "agentskills.io/specification",
     "entry": "SKILL.md",
     "referencesPath": "references",
     "syncScript": "scripts/sync-skills.mjs",
     "docSync": "scripts/sync-skill-docs.mjs",
-    "recommendForTags": ["web-framework", "http-api", "database", "mobile", "infrastructure"],
+    "recommendForTags": ["web-framework", "http-api", "database", "mobile", "infrastructure", "script-project", "data-project", "docs-project"],
     "portable": "Every pack follows the open Agent Skills format, so the same directory can be copied into any harness skills directory without rewriting it.",
     "packs": [
       {
@@ -70,7 +103,7 @@
         "activation": "Load only when choosing what to verify, adding or repairing tests, fixing a bug that must not return, or deciding what CI gates; read SKILL.md, then open only the reference files the task maps to.",
         "summary": "Choosing what to verify, test levels, browser journeys, flakiness and test data, regression tests.",
         "summaryTh": "การเลือกสิ่งที่จะตรวจสอบ, ระดับของ test, browser journey, flakiness และ test data, regression test",
-        "recommendFor": ["web-framework", "http-api"]
+        "recommendFor": ["web-framework", "http-api", "script-project", "data-project"]
       },
       {
         "id": "security",
@@ -80,7 +113,7 @@
         "activation": "Load for threat modeling, authz, untrusted input, secrets, dependencies, or security verification; read SKILL.md, then only the mapped references.",
         "summary": "Threat modeling, identity and authorization, input/output safety, secrets and supply chain, and security verification.",
         "summaryTh": "การทำ threat model, identity/authz, ความปลอดภัยของ input/output, secrets, supply chain และการตรวจ security",
-        "recommendFor": ["web-framework", "http-api", "database"]
+        "recommendFor": ["web-framework", "http-api", "database", "script-project"]
       },
       {
         "id": "infrastructure",
@@ -111,6 +144,36 @@
         "summary": "Planning and executing a production release safely: preflight verification, deploy execution, rollback readiness, release observability, and post-release confirmation.",
         "summaryTh": "การวางแผนและ execute release อย่างปลอดภัย: preflight, deploy, rollback, observability หลัง release และการยืนยันหลังปล่อยจริง",
         "recommendFor": ["web-framework"]
+      },
+      {
+        "id": "automation",
+        "version": 1,
+        "sourcePath": "skills/automation",
+        "bootstrapPath": ".ai-kit/skills/automation",
+        "activation": "Load for command-line tools, scripts, scheduled tasks, or repeatable automation; read SKILL.md and only the mapped references.",
+        "summary": "Reliable scripts, CLI interfaces, input validation, idempotency, and automation handoff.",
+        "summaryTh": "สคริปต์ที่เชื่อถือได้, CLI, การตรวจ input, idempotency และ handoff ของ automation",
+        "recommendFor": ["script-project"]
+      },
+      {
+        "id": "data-analysis",
+        "version": 1,
+        "sourcePath": "skills/data-analysis",
+        "bootstrapPath": ".ai-kit/skills/data-analysis",
+        "activation": "Load for data cleaning, analysis, metrics, or reporting; inspect schemas and samples without exposing sensitive rows.",
+        "summary": "Reproducible data inspection, cleaning, calculation, provenance, and honest reporting.",
+        "summaryTh": "การตรวจและทำความสะอาดข้อมูล การคำนวณ ที่มา และการรายงานอย่างตรวจสอบได้",
+        "recommendFor": ["data-project"]
+      },
+      {
+        "id": "content-docs",
+        "version": 1,
+        "sourcePath": "skills/content-docs",
+        "bootstrapPath": ".ai-kit/skills/content-docs",
+        "activation": "Load for documentation, runbooks, procedures, or content assembled from source material; distinguish supplied facts from unknowns.",
+        "summary": "Source-grounded documentation, operational procedures, consistency checks, and fact boundaries.",
+        "summaryTh": "เอกสารและคู่มือที่ยึดแหล่งข้อมูล ตรวจความสอดคล้อง และแยกข้อเท็จจริง",
+        "recommendFor": ["docs-project"]
       }
     ]
   },
@@ -142,7 +205,7 @@
     ],
     "packageManagerRule": "Use the package manager selected by the existing lockfile.",
     "stackRule": "Detect and preserve the existing architecture. Do not force Supabase, Neon, Drizzle, Prisma, Vercel, or any other provider merely because it appears in this kit.",
-    "commandPolicy": "Use scripts/policy-check.mjs before commands that can mutate Git, data, cloud, containers, or remote systems; deny-first decisions are logged without secrets.",
+    "commandPolicy": "In an installed project, use node .ai-kit/bin/policy-check.mjs before commands that can mutate Git, data, cloud, containers, or remote systems; in the kit repository use node scripts/policy-check.mjs. Deny-first decisions are logged without secrets.",
     "memoryRule": "Persist only non-secret decisions, lessons, and handoff context under .ai-kit/memory; current repository evidence wins.",
     "metricsRule": "Record task-level session metrics when available; metrics are evidence for improvement, not claims of model quality."
   },

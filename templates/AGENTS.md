@@ -1,6 +1,6 @@
 # Project-specific AI instructions
 
-At the start of a session, read `.ai-kit/project.json` when present, then `START_PROMPT.md`, `PROJECT_CONTEXT.md`, `docs/run.md`, the repository README, and package manifests before changing code. If state and source disagree, current repository evidence wins.
+At the start of a session, read `.ai-kit/project.json` when present, then `START_PROMPT.md`, `PROJECT_CONTEXT.md`, `docs/run.md`, the repository README, and relevant manifests before changing work. Read `project.profile` and use `definitionOfDone` from every matched profile as the verification checklist. If state and source disagree, current repository evidence wins. Read matching project overlays under `.ai-kit/overlays/` within their stated scope.
 
 ## Project purpose
 
@@ -19,10 +19,10 @@ At the start of a session, read `.ai-kit/project.json` when present, then `START
 - Resolve which packs are installed from the directories under `.ai-kit/skills/` and from `.ai-kit/project.json` → `capabilities.potentiallyUseful`; each `SKILL.md` frontmatter states its `name`, `description`, and scope. Do not rely on a pack list written in prose, and when the kit repository is available treat `toolchain.json` → `skills.packs` as the authoritative registered list.
 - Open the one pack whose frontmatter description matches the task, then only the references that pack maps to; never load a whole pack or a pack "just in case".
 - Boundaries that a description match alone gets wrong: `ui-ux` is the web visual/flow layer while `mobile` owns native lifecycle, offline/sync, permissions, builds, and store release; `data-layer` needs stored-data changes and `api` needs an HTTP surface; `security` and `testing` strengthen the owning pack instead of replacing it; `infrastructure` is not application feature code; `release` activates only once a release decision exists and production needs explicit authorization.
-- Before mutating Git/database/cloud/container/remote systems, classify the command with `node scripts/policy-check.mjs`; deny is a hard stop and approval-required needs explicit authorization. Keep decisions in `.ai-kit/audit/events.jsonl`.
-- Use `node scripts/memory.mjs` for non-secret decisions, lessons, and handoff; use `node scripts/metrics.mjs` for task evidence.
+- Before mutating Git/database/cloud/container/remote systems in an installed project, classify the command with `node .ai-kit/bin/policy-check.mjs`; in the kit repository use `node scripts/policy-check.mjs`. Deny is a hard stop and approval-required needs explicit authorization. Keep decisions in `.ai-kit/audit/events.jsonl`.
+- Use `node .ai-kit/bin/memory.mjs` for non-secret decisions, lessons, and handoff; use `node .ai-kit/bin/metrics.mjs` for task evidence. In the kit repository, use the matching `scripts/` paths.
 - Reuse the existing design system first; do not add a second component library without a requirement.
-- Build success is not visual acceptance, and passing unit tests is not API verification. Verify the actual route in a browser; use Playwright and accessibility checks when configured.
+- For the `web-app` profile, build success is not visual acceptance, and passing unit tests is not API verification. Verify the actual route in a browser; use Playwright and accessibility checks when configured.
 
 ## Context budget
 
@@ -54,3 +54,7 @@ At the start of a session, read `.ai-kit/project.json` when present, then `START
 - Preserve the project's existing database/provider/ORM choice unless the task explicitly changes architecture.
 - Never store secrets in `.ai-kit/memory/`, `.ai-kit/audit/`, or `.ai-kit/metrics/`.
 - Current repository evidence wins over memory and generated state.
+
+## Project overlays
+
+Read matching `.ai-kit/overlays/<name>/OVERLAY.md` files within their stated scope. Overlays may add domain rules, but must never relax security, policy, or verification requirements.

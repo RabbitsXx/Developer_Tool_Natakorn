@@ -86,9 +86,16 @@ Use `scripts/doctor.ps1` to refresh this result on any machine.
 
 ## GitHub Actions decision
 
-GitHub Actions is intentionally **not enabled by default** in this private kit. Local validation remains the baseline through `scripts/doctor.ps1`, `scripts/doctor.sh`, bootstrap verification, JSON parsing, and project checks.
+GitHub Actions is intentionally **not enabled by default** in the kit. Local validation remains the baseline through `scripts/doctor.ps1`, `scripts/doctor.sh`, bootstrap verification, JSON parsing, and project checks.
 
 An optional starter workflow now exists at `templates/optional/github-actions-ci.yml`. Copy it into a target project's `.github/workflows/` only when remote verification is useful and after confirming that project's package manager, Actions policy, runner/billing settings, and required services. The template performs verification only; it does not deploy.
+
+## Universal-work upgrade (2026-10-08)
+
+- Added manifest-driven work profiles, bounded names-only file-extension hints, and profile-specific `definitionOfDone` checklists. Data and document contents are not read by the extension scan.
+- Added automation, data-analysis, and content-docs skill packs; project-owned overlays; agent-neutral pointers; and runtime helper synchronization into `.ai-kit/bin/`.
+- Fixed workflow detection: `.github/workflows` was used by infrastructure/remote-CI detection but was missing from the scanned marker list. Repositories with workflow directories now detect infrastructure and remote CI; this can change the architecture fingerprint once. Review the observed difference and use `--accept-drift` only when the workflow directory is intentional.
+- Repository hygiene finding: the GitHub repository is public under the personal `RabbitsXx` account, while the old README opening called the kit “Private”; no `LICENSE` file is present. Recommend moving the work to a private organization repository and choosing an appropriate license before any broader release. Repository visibility and GitHub settings were not changed.
 
 ## Primary references
 

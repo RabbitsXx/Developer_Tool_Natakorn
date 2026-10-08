@@ -11,9 +11,10 @@ Your first job is NOT to write feature code.
 ## Bootstrap sequence
 
 1. Locate the repository root and confirm the current working tree without changing it.
-2. Read `.ai-kit/project.json` if it exists.
+2. Read `.ai-kit/project.json` if it exists. Read `project.profile` and use `definitionOfDone` from each matched profile as the task's verification checklist. The `web-app` profile is the browser-focused case; other profiles use their own checks.
 3. Read `AGENTS.md`, `PROJECT_CONTEXT.md`, `docs/run.md`, and repository README/instructions that apply.
 4. Inspect package manifests, lockfiles, framework config, database/access-layer config, test scripts, deployment config, and existing quality gates.
+   Read matching `.ai-kit/overlays/<name>/OVERLAY.md` files within their declared scope.
 5. If the full `ai-project-kit` repository is available and `.ai-kit/project.json` is missing or stale, run its safe detector:
    `node ai-project-kit/scripts/setup-project.mjs --target .`
    If the kit lives elsewhere, use that path. This detector may only create/update `.ai-kit/project.json` and will refuse to overwrite recorded architecture when drift is detected.
@@ -90,9 +91,9 @@ CONTEXT:
 
 OPTIONAL — enable only when justified:
 - Skill packs (open Agent Skills format): resolve which packs exist from `.ai-kit/skills/` and from the registered list in the kit manifest instead of a pack list written in prose — see "Skill pack activation" below
-- Command policy: before a mutating Git/database/cloud/container/remote command, run `node scripts/policy-check.mjs --target . --command "..."`; deny is a hard stop, approval-required needs explicit authorization, and every decision is recorded in `.ai-kit/audit/events.jsonl`. If authorized, execute through `node scripts/run-safe.mjs --command "..." --approved --reason "..."`, not a raw shell bypass.
-- Persistent memory: use `node scripts/memory.mjs --kind decision|lesson|handoff --text "..."`; store only non-secret context in `.ai-kit/memory/`, and read the current handoff before resuming substantial work
-- Session evidence: record task-level events with `node scripts/metrics.mjs --event session-start|session-end --session <id> ...`; run `node scripts/eval-kit.mjs` for deterministic kit-contract evals, not as a claim about model intelligence
+- Command policy: before a mutating Git/database/cloud/container/remote command in an installed project, run `node .ai-kit/bin/policy-check.mjs --target . --command "..."`; in the kit repository use `node scripts/policy-check.mjs`. Deny is a hard stop, approval-required needs explicit authorization, and every decision is recorded in `.ai-kit/audit/events.jsonl`. If authorized, execute through `node .ai-kit/bin/run-safe.mjs --command "..." --approved --reason "..."`, not a raw shell bypass. In the kit repository use the corresponding `scripts/` path.
+- Persistent memory: use `node .ai-kit/bin/memory.mjs --kind decision|lesson|handoff --text "..."`; store only non-secret context in `.ai-kit/memory/`, and read the current handoff before resuming substantial work. In the kit repository use `scripts/memory.mjs`.
+- Session evidence: record task-level events with `node .ai-kit/bin/metrics.mjs --event session-start|session-end --session <id> ...`; run `node scripts/eval-kit.mjs` in the kit repository for deterministic kit-contract evals, not as a claim about model intelligence. In the kit repository use `scripts/metrics.mjs`.
 - `@axe-core/playwright`: accessibility checks when Playwright is already selected for a user-facing web project
 - Knip: JS/TS code-health checks for unused files, exports, and dependencies when the project is mature enough for cleanup
 - Lefthook: optional local pre-commit/pre-push quality guard when the repository has stable quality commands
@@ -109,6 +110,8 @@ OPTIONAL — enable only when justified:
 
 Skill packs live in `.ai-kit/skills/<pack>/` in the open Agent Skills format: a `SKILL.md` entry plus a `references/` directory.
 
+Use each matched profile's `definitionOfDone` from `.ai-kit/project.json` as the verification checklist. Matching overlays live in `.ai-kit/overlays/`; they add scoped domain requirements and never relax security, command policy, or verification rules. Organization-specific rules belong in project-owned overlays outside the kit core.
+
 Resolve which packs exist, never from a prose list, which drifts: the directories under `.ai-kit/skills/` (each `SKILL.md` frontmatter states its name, description, and scope), `.ai-kit/project.json` → `capabilities.potentiallyUseful` for what this project needs, and — when the kit repository is available — `toolchain.json` → `skills.packs` for the registered list and `recommendFor` traits.
 
 Open only the pack whose description matches the task, then only the reference files it maps to. Never load a whole pack, and never load one "just in case". Boundaries a description match gets wrong:
@@ -121,7 +124,7 @@ Open only the pack whose description matches the task, then only the reference f
 
 Details live in each pack. These rules must survive even when the pack is not read:
 
-- **User-facing UI** — never jump from a request straight to JSX/CSS: establish user goal, task flow, hierarchy, design-system constraints, responsive behavior, and a QA plan first; reuse the existing design system; a passing build is not visual acceptance, so verify the real route in a browser (Playwright and accessibility checks when configured); treat screenshots as layout evidence, not decoration.
+- **Web-app profile** — never jump from a request straight to JSX/CSS: establish user goal, task flow, hierarchy, design-system constraints, responsive behavior, and a QA plan first; reuse the existing design system; a passing build is not visual acceptance, so verify the real route in a browser (Playwright and accessibility checks when configured); treat screenshots as layout evidence, not decoration.
 
 - **Endpoints and contracts** — decide status codes and one shared error envelope before writing handlers; never trust client-supplied identity, tenant, role, or computed values, and authorize the specific resource; unit tests alone are not API verification — exercise real requests including a failure path and an authorization-negative case.
 

@@ -9,8 +9,8 @@ Build software with evidence, reproducible setup, minimal context waste, and saf
 ## Startup protocol
 
 1. Confirm the absolute working directory, repository root, current branch, remotes, and working-tree status.
-2. Read `.ai-kit/project.json` first when present. Treat it as an orientation cache, not as authority over current repository evidence.
-3. Read `START_PROMPT.md` when present, then all applicable `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, project context, run, test, and deployment documents.
+2. Read `.ai-kit/project.json` first when present. Treat it as an orientation cache, not as authority over current repository evidence. Read `project.profile` and use the `definitionOfDone` items for every matched profile as the task's verification checklist.
+3. Read `START_PROMPT.md` when present, then all applicable `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, project context, run, test, and deployment documents. Read matching project overlays under `.ai-kit/overlays/` within their stated scope.
 4. Determine `NEW_PROJECT`, `EXISTING_PROJECT`, or `RESUME_CONFIGURED_PROJECT`. If the kit detector is available, use `node scripts/setup-project.mjs --target <project>` or the equivalent kit path to establish/refresh non-secret project state.
 5. Detect the stack from source files, manifests, lockfiles, and framework configuration. Never replace an existing package manager or architecture merely to match this kit.
 6. Preserve pre-existing and unrelated changes. Do not stage, overwrite, stash, clean, reset, or delete work you do not own.
@@ -46,13 +46,13 @@ Boundaries that a description match alone gets wrong:
 - `security` and `testing` are cross-cutting: they strengthen the pack that owns the change instead of replacing it.
 - `infrastructure` covers pipelines, runtimes, cloud, and networking — not application feature code.
 - Do not load a pack for work it does not cover: no `ui-ux` for backend, database, infrastructure, or documentation-only tasks; no `api` for pure UI work; no `data-layer` for tasks that do not change stored data; no `security` for cosmetic-only work; no `infrastructure` for application-only changes; no `mobile` for browser-only work; no `release` for feature work that has not reached a release decision.
-- Substantial UI work must establish user goal, task flow, hierarchy, responsive behavior, and browser/visual QA before it is considered complete.
+- For the `web-app` profile, substantial UI work must establish user goal, task flow, hierarchy, responsive behavior, and browser/visual QA before it is considered complete.
 - Reuse the project's existing design system/components before adding another UI library.
 - Build success is not visual acceptance, and passing unit tests is not API or data verification. Verify changed routes in a real browser (Playwright and `@axe-core/playwright` when configured), exercise changed endpoints with real requests including a failure path and an authorization-negative case, and apply data changes to a local or explicitly authorized database with the rollback path and constraints checked.
 
-- Before a mutating Git/database/cloud/container/remote command, run `node scripts/policy-check.mjs --target . --command "..."`; deny is a hard stop, approval-required needs explicit authorization, and decisions are appended to `.ai-kit/audit/events.jsonl`.
-- Use `node scripts/run-safe.mjs --command "..." --approved --reason "..."` only after an approval-required command has been explicitly authorized; never bypass the policy with a raw shell command when the gate applies.
-- Persist only non-secret decisions, lessons, and handoff context under `.ai-kit/memory/`; record task metrics when available with `scripts/metrics.mjs` and run `scripts/eval-kit.mjs` for deterministic kit-contract checks.
+- Before a mutating Git/database/cloud/container/remote command in an installed project, run `node .ai-kit/bin/policy-check.mjs --target . --command "..."`; in the kit repository use `node scripts/policy-check.mjs`. Deny is a hard stop, approval-required needs explicit authorization, and decisions are appended to `.ai-kit/audit/events.jsonl`.
+- Use `node .ai-kit/bin/run-safe.mjs --command "..." --approved --reason "..."` only after an approval-required command has been explicitly authorized; never bypass the policy with a raw shell command when the gate applies. In the kit repository, use the corresponding `scripts/` path.
+- Persist only non-secret decisions, lessons, and handoff context under `.ai-kit/memory/`; record task metrics when available with `node .ai-kit/bin/metrics.mjs`. Run `node scripts/eval-kit.mjs` in the kit repository for deterministic kit-contract checks.
 
 - Prefer repository-local dependencies and scripts over global tools.
 - Use the lockfile's package manager. Never create a second lockfile.
@@ -85,7 +85,7 @@ Boundaries that a description match alone gets wrong:
 
 ## Verification protocol
 
-Run the narrowest relevant checks first, followed by broader checks when practical:
+Start with the `definitionOfDone` checklist recorded for every matched profile in `.ai-kit/project.json`. The `web-app` profile carries the browser-focused verification ladder; other profiles use checks suited to their work. Then run the narrowest relevant checks first, followed by broader checks when practical:
 
 1. formatter/check
 2. linter
@@ -96,6 +96,10 @@ Run the narrowest relevant checks first, followed by broader checks when practic
 7. browser/Preview verification for user-facing behavior; prefer Playwright for repeatable critical journeys when configured
 
 Do not claim a check passed unless it ran successfully. Record skipped checks and the reason.
+
+## Project overlays
+
+Read matching `.ai-kit/overlays/<name>/OVERLAY.md` files for domain-specific rules and use them only within their declared scope. Overlays may add requirements, but never relax security, command policy, or verification rules. Keep organization-specific rules in project-owned overlays, outside the kit core.
 
 ## Handoff
 

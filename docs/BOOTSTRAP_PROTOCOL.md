@@ -39,13 +39,17 @@ The file contains only non-secret project metadata:
 - UI/UX, API, data-layer, testing, security, infrastructure, mobile, and release skill-pack presence
 - browser E2E, accessibility, code-health, Git-hook, background-work, observability, deployment, mobile, and infrastructure signals
 - available and potentially useful capabilities
+- primary and matched project profiles, with a `definitionOfDone` checklist for each matched profile
+- file-extension hints from a bounded names-only scan; data and document contents are not opened for profile detection
+- installed project overlays reported as `overlay:<name>` capabilities
 - quality-gate script names
 - architecture fingerprint
 - drift status
 - pending setup decisions
 
-- `policy.json` is copied to `.ai-kit/policy.json` and supplies a deny-first command policy; `scripts/policy-check.mjs` never executes commands, but classifies and audits them.
+- `policy.json` is copied to `.ai-kit/policy.json` and supplies a deny-first command policy. The bootstrap copies `policy-check.mjs`, `run-safe.mjs`, `memory.mjs`, and `metrics.mjs` into `.ai-kit/bin/`; in an installed project, use `node .ai-kit/bin/policy-check.mjs`. The kit repository uses `node scripts/policy-check.mjs`.
 - `.ai-kit/memory/` stores non-secret decisions, lessons, and the current handoff; `.ai-kit/metrics/` stores compact task/session evidence. Current repository evidence always wins.
+- Profile and overlay results are deliberately excluded from the architecture fingerprint. The `web-app` profile carries browser-focused checks; other profiles add task-appropriate checks from their own `definitionOfDone` lists.
 
 
 
@@ -81,19 +85,21 @@ Never use `--accept-drift` simply to silence a warning.
 
 ## Bootstrap behavior
 
-1. Add missing AI-project instruction, policy, and memory files without overwriting existing project files.
+1. Add missing AI-project instruction, policy, memory, and agent-neutral pointer files without overwriting existing project files.
 2. Synchronize every Agent Skills pack registered in `toolchain.json` into `.ai-kit/skills/<pack>` without overwriting project-local edits, using the manifest-driven sync script.
-3. Run the safe project detector to establish `.ai-kit/project.json`.
+3. Copy the four runtime helpers into `.ai-kit/bin/`; existing copies are preserved and differences are reported unless `--update` is requested.
+4. Optionally copy project-owned overlays from `--overlay <dir>` or `AI_KIT_OVERLAY_DIR`. Existing overlays are preserved; secret-like files and oversized files are refused.
+5. Run the safe project detector to establish `.ai-kit/project.json`.
 
 
 
 The bootstrap process intentionally does **not** install Playwright, `@axe-core/playwright`, Knip, Lefthook, Supabase, Neon, Drizzle, Prisma, Docker, Inngest, observability, CI, or any other optional dependency. Skills are text instructions only; package installation remains project-specific.
 
-Before mutating Git, database, cloud, container, or remote systems, use the policy checker. A deny decision is a hard stop; approval-required decisions need explicit authorization. If authorized, execute through `scripts/run-safe.mjs`, which records the approval and only then starts the command. These scripts are a command gate and audit trail, not an OS sandbox; a harness must still enforce process permissions.
+Before mutating Git, database, cloud, container, or remote systems in an installed project, use `.ai-kit/bin/policy-check.mjs`. A deny decision is a hard stop; approval-required decisions need explicit authorization. If authorized, execute through `.ai-kit/bin/run-safe.mjs`, which records the approval and only then starts the command. In the kit repository, use the equivalent `scripts/` paths. These scripts are a command gate and audit trail, not an OS sandbox; a harness must still enforce process permissions.
 
 
 ```text
-node scripts/policy-check.mjs --target /path/to/project --command "..."
+node .ai-kit/bin/policy-check.mjs --target /path/to/project --command "..."
 ```
 
 Use the memory and metrics commands for non-secret continuity and evidence:
@@ -128,6 +134,8 @@ Actual task
 ```
 
 The persistent state is a fast orientation layer, not a replacement for repository evidence. If state and current code disagree, current code wins and the agent must explain the drift. The state is intentionally safe to commit: it contains no secret values and does not rewrite timestamps on every unchanged resume.
+
+Read `project.profile` at the start of a task and follow every matched profile's `definitionOfDone` checklist. Profiles and overlays are derived context; they are not architecture authority and do not affect the architecture fingerprint.
 
 ## Architecture fingerprint
 

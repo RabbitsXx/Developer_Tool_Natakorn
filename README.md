@@ -1,6 +1,6 @@
 # ⚡ Ultimate VibeCoder Ecosystem
 
-Private, portable developer kit สำหรับเริ่มโปรเจกต์ด้วย AI แบบมีกรอบชัดเจน ลด terminal noise, ลด context ที่ไม่จำเป็น และทำให้ทุกเครื่องใช้วิธี setup ใกล้เคียงกัน
+Portable developer kit สำหรับเริ่มโปรเจกต์ด้วย AI แบบมีกรอบชัดเจน ลด terminal noise, ลด context ที่ไม่จำเป็น และทำให้ทุกเครื่องใช้วิธี setup ใกล้เคียงกัน
 
 Repository นี้ไม่ใช่ application template สำเร็จรูป และไม่ฝัง API key หรือ cloud credential ใด ๆ ลง Git เป้าหมายคือเป็น “คู่มือปฏิบัติ + เครื่องมือตรวจ + bootstrap” ที่นำไปใช้กับโปรเจกต์ใหม่ได้ทุกครั้ง
 
@@ -66,18 +66,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\doctor.ps1 -Strict
 
 <!-- skill-packs:start (generated from toolchain.json; run: node scripts/sync-skill-docs.mjs) -->
 
-_8 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.packs`; ทุก pack มี `SKILL.md` + `references/` ตามรูปแบบ Agent Skills_
+_11 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.packs`; ทุก pack มี `SKILL.md` + `references/` ตามรูปแบบ Agent Skills_
 
 | Pack | ใช้เมื่อ | แนะนำเมื่อโปรเจกต์มี |
 |---|---|---|
 | `ui-ux` → `.ai-kit/skills/ui-ux/SKILL.md` | งาน UI ที่ผู้ใช้เห็น: หน้า, flow, ระบบคอมโพเนนต์, responsive และ visual QA | `web-framework` |
 | `api` → `.ai-kit/skills/api/SKILL.md` | งาน HTTP endpoint/route handler, สัญญา request/response, error shape, ขอบเขต authz และ API test | `http-api` |
 | `data-layer` → `.ai-kit/skills/data-layer/SKILL.md` | งาน schema/constraint, ความปลอดภัยของ migration, query และ index, tenant scoping, การตรวจข้อมูล | `database` |
-| `testing` → `.ai-kit/skills/testing/SKILL.md` | การเลือกสิ่งที่จะตรวจสอบ, ระดับของ test, browser journey, flakiness และ test data, regression test | `web-framework`, `http-api` |
-| `security` → `.ai-kit/skills/security/SKILL.md` | การทำ threat model, identity/authz, ความปลอดภัยของ input/output, secrets, supply chain และการตรวจ security | `web-framework`, `http-api`, `database` |
+| `testing` → `.ai-kit/skills/testing/SKILL.md` | การเลือกสิ่งที่จะตรวจสอบ, ระดับของ test, browser journey, flakiness และ test data, regression test | `web-framework`, `http-api`, `script-project`, `data-project` |
+| `security` → `.ai-kit/skills/security/SKILL.md` | การทำ threat model, identity/authz, ความปลอดภัยของ input/output, secrets, supply chain และการตรวจ security | `web-framework`, `http-api`, `database`, `script-project` |
 | `infrastructure` → `.ai-kit/skills/infrastructure/SKILL.md` | งาน infrastructure, CI/CD, container, cloud configuration, reliability และ operational verification | `infrastructure` |
 | `mobile` → `.ai-kit/skills/mobile/SKILL.md` | งาน mobile architecture, platform boundary, offline behavior, permissions, release build และการตรวจบนอุปกรณ์ | `mobile` |
 | `release` → `.ai-kit/skills/release/SKILL.md` | การวางแผนและ execute release อย่างปลอดภัย: preflight, deploy, rollback, observability หลัง release และการยืนยันหลังปล่อยจริง | `web-framework` |
+| `automation` → `.ai-kit/skills/automation/SKILL.md` | สคริปต์ที่เชื่อถือได้, CLI, การตรวจ input, idempotency และ handoff ของ automation | `script-project` |
+| `data-analysis` → `.ai-kit/skills/data-analysis/SKILL.md` | การตรวจและทำความสะอาดข้อมูล การคำนวณ ที่มา และการรายงานอย่างตรวจสอบได้ | `data-project` |
+| `content-docs` → `.ai-kit/skills/content-docs/SKILL.md` | เอกสารและคู่มือที่ยึดแหล่งข้อมูล ตรวจความสอดคล้อง และแยกข้อเท็จจริง | `docs-project` |
 
 <!-- skill-packs:end -->
 | Browser E2E | Playwright | ตรวจ critical user journeys ที่ build อย่างเดียวพิสูจน์ไม่ได้ |
@@ -110,6 +113,8 @@ _8 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.pac
 │   ├── CONTEXT_EFFICIENCY.md # search-first, context budget และ delegation rules
 │   ├── QUALITY_AND_PRODUCTION.md # Playwright, optional CI, observability
 │   ├── INSTALLATION.md       # ติดตั้งแยกตามระบบปฏิบัติการ
+│   ├── PROFILES.md           # profile และ checklist จาก detected evidence
+│   ├── OVERLAYS.md           # กฎเฉพาะโปรเจกต์ที่อยู่นอก kit core
 │   └── AUDIT.md              # จุดผิด/เสี่ยงจากสเปกตั้งต้นและวิธีแก้
 ├── scripts/
 │   ├── doctor.ps1            # ตรวจเครื่อง Windows แบบ read-only
@@ -121,6 +126,9 @@ _8 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.pac
 │   ├── bootstrap-project.sh  # ลง template + state ในโปรเจกต์ macOS/Linux
 │   ├── sync-skills.mjs       # copy ทุก Agent Skills pack ที่ลงทะเบียนใน toolchain.json
 │   ├── sync-skill-docs.mjs   # generate ตาราง pack ใน README/INSTALLATION จาก manifest (--check สำหรับ gate)
+│   ├── sync-runtime.mjs      # ติดตั้ง policy/memory/metrics helpers ลง .ai-kit/bin/
+│   ├── sync-overlays.mjs     # copy project overlays พร้อมป้องกันไฟล์ลับและไฟล์ขนาดใหญ่
+│   ├── profile-info.mjs      # แสดง profile จาก manifest และตรวจ profile ของโปรเจกต์
 │   ├── new-skill.mjs         # scaffold pack ใหม่: สร้าง SKILL.md + references + ลงทะเบียนใน toolchain.json
 │   ├── policy-check.mjs      # classify คำสั่งแบบ deny-first + redact + append audit log (ไม่ execute)
 │   ├── run-safe.mjs          # รันคำสั่งผ่าน policy gate (allow / deny / approval-required)
@@ -132,7 +140,9 @@ _8 pack ลงทะเบียนใน `toolchain.json` ที่ `skills.pac
 │   └── tool-report.mjs       # probe ทุก tool ใน toolchain.json → JSON + Markdown + HTML
 ├── skills/                   # <pack>/SKILL.md + references/ ต่อ pack ตามสเปก Agent Skills
 │                             # รายการ pack จริง = toolchain.json skills.packs (ตารางด้านบน generate จาก manifest)
-└── templates/                # ไฟล์ตั้งต้นที่ bootstrap นำไปใช้ (รวม policy.json และ memory/)
+└── templates/                # templates รวม policy/memory, overlays, และ agent pointers
+    ├── agent-pointers/       # CLAUDE.md, GEMINI.md และ Copilot pointer ไป AGENTS.md
+    ├── overlay/              # โครง overlay กลางที่ไม่มีเนื้อหาขององค์กรใดองค์กรหนึ่ง
     └── optional/             # Playwright/CI starters เลือก copy เอง ไม่ bootstrap อัตโนมัติ
 ```
 
@@ -156,8 +166,8 @@ node scripts/eval-kit.mjs                   # evals ของสัญญา kit
 คิทไม่แกล้งอ้างว่าเป็น sandbox ระดับ OS — มันเป็น **command gate + audit trail** ที่ agent และ hook เรียกใช้ได้จริง
 
 ```bash
-node scripts/policy-check.mjs --command "vercel deploy --prod"   # classify เท่านั้น ไม่รัน (exit 1 = deny, 2 = ต้องอนุมัติ)
-node scripts/run-safe.mjs --command "vercel deploy --prod" --approved --reason "authorized by user"
+node .ai-kit/bin/policy-check.mjs --command "vercel deploy --prod"   # ในโปรเจกต์ที่ติดตั้งแล้ว: classify เท่านั้น ไม่รัน
+node .ai-kit/bin/run-safe.mjs --command "vercel deploy --prod" --approved --reason "authorized by user"
 node scripts/memory.mjs --kind decision --text "เก็บ provider เดิมไว้ เพราะ ..."
 node scripts/memory.mjs --kind handoff --text "งานที่ค้างและขั้นถัดไป"
 node scripts/metrics.mjs --event session-end --session <id> --status passed --files 7 --duration-ms 540000
@@ -310,6 +320,18 @@ _19 tools probed 2026-09-11T02:59:33.054Z on win32 10.0.26100, probe cwd `../app
 
 ผลชุดนี้เป็นของ Windows เท่านั้น — รอบนี้ยังไม่มีหลักฐานบน macOS/Linux
 
+## โปรไฟล์งานและ checklist
+
+หลัง bootstrap ให้ AI อ่าน `.ai-kit/project.json` → `project.profile` แล้วใช้ `definitionOfDone` ของทุกโปรไฟล์ที่ตรงกับงานเป็น checklist ตรวจผล โปรไฟล์ช่วยเลือกวิธีตรวจสอบให้ตรงประเภทงาน; รายการและรายละเอียดอ้างอิงจาก `toolchain.json` ผ่าน `node scripts/profile-info.mjs` และไม่ติดตั้งเครื่องมือเพิ่ม
+
+## Overlays สำหรับกฎเฉพาะโปรเจกต์
+
+เก็บกฎธุรกิจ ข้อมูลผลิตภัณฑ์ แบรนด์ หรือข้อกำหนดขององค์กรไว้ใน overlay ของโปรเจกต์นอก kit core แล้วติดตั้งด้วย `--overlay <dir>` หรือ `AI_KIT_OVERLAY_DIR` ระหว่าง bootstrap กฎใน overlay เพิ่มข้อกำหนดเฉพาะโดเมนได้ แต่ห้ามลดระดับ security, command policy หรือ verification อ่าน [docs/OVERLAYS.md](docs/OVERLAYS.md) และใช้ `templates/overlay/OVERLAY.md` เป็นตัวอย่างกลาง
+
+## Agent pointers
+
+Bootstrap จะเพิ่ม `CLAUDE.md`, `GEMINI.md` และ `.github/copilot-instructions.md` เมื่อยังไม่มี แต่ละไฟล์ชี้ให้ agent อ่าน `AGENTS.md` ก่อน เพื่อให้กติกาหลักมีแหล่งเดียว
+
 ## หลักการสำคัญ
 
 - เริ่ม session ใหม่ด้วย `START_PROMPT.md` และ `.ai-kit/project.json`; ถ้า architecture fingerprint ไม่เปลี่ยน ห้าม setup ซ้ำโดยไม่มีเหตุผล
@@ -321,9 +343,12 @@ _19 tools probed 2026-09-11T02:59:33.054Z on win32 10.0.26100, probe cwd `../app
 - Database/provider/ORM เป็น project decision; migration history ต้องสะท้อน behavior ที่ deploy ได้จริงเมื่อ architecture ใช้ migrations
 - ทุกงานต้องมี lint/typecheck/test/build ตามที่โปรเจกต์รองรับ และทดสอบ UI จริงเมื่อเปลี่ยน behavior; critical browser journeys ใช้ Playwright เมื่อ configure ไว้
 - CI และ observability เป็น optional capability ไม่ใช่ dependency ที่ต้องยัดทุกโปรเจกต์
-- Skill packs (`ui-ux`, `api`, `data-layer`, `testing`, `security`, `infrastructure`, `mobile`, `release`) ถูก bootstrap เป็น instruction-only ใต้ `.ai-kit/skills/<pack>` ในรูปแบบ Agent Skills (`SKILL.md` + `references/`) จึงย้ายไปใช้กับ harness อื่นได้ทันที; Agent อ่าน `SKILL.md` แล้วเปิดเฉพาะ reference ที่ตรงกับงานเพื่อลด token/context
-- ก่อนรันคำสั่งที่แก้ Git/database/cloud/container/remote system ให้ใช้ `scripts/policy-check.mjs` แบบ deny-first; ทุก decision ถูก redact และ append ลง `.ai-kit/audit/events.jsonl` แต่ตัว checker ไม่ใช่ OS sandbox และไม่ execute command แทน agent
-- ใช้ `.ai-kit/memory/` สำหรับ decision/lesson/handoff ที่ไม่เป็นความลับ และ `.ai-kit/metrics/` สำหรับหลักฐานระดับ task/session; `scripts/eval-kit.mjs` วัด contract ของ kit ไม่ใช่ความฉลาดของ model
+- Skill packs ถูก bootstrap เป็น instruction-only ใต้ `.ai-kit/skills/<pack>/` ในรูปแบบ Agent Skills (`SKILL.md` + `references/`) จึงใช้กับ harness ต่าง ๆ ได้; Agent อ่านเฉพาะ pack และ reference ที่ตรงกับงาน
+- ก่อนรันคำสั่งที่แก้ Git/database/cloud/container/remote system ในโปรเจกต์ที่ติดตั้งแล้ว ให้ใช้ `.ai-kit/bin/policy-check.mjs` แบบ deny-first; ทุก decision ถูก redact และ append ลง `.ai-kit/audit/events.jsonl` แต่ตัว checker ไม่ใช่ OS sandbox และไม่ execute command แทน agent
+- Runtime helpers (`policy-check`, `run-safe`, `memory`, `metrics`) ถูกติดตั้งใน `.ai-kit/bin/`; ใน repository ของ kit ใช้ไฟล์ใน `scripts/` และ `scripts/eval-kit.mjs` วัด contract ของ kit ไม่ใช่ความฉลาดของ model
+- ใช้ `.ai-kit/project.json` → `project.profile` และ `definitionOfDone` ของทุก profile ที่ตรงกับงานเป็น checklist สำหรับการตรวจสอบ
+- เก็บกฎเฉพาะองค์กรหรือโดเมนใน overlay ของโปรเจกต์นอก kit core; ใช้ `--overlay <dir>` หรือ `AI_KIT_OVERLAY_DIR` ตอน bootstrap
+- Bootstrap สร้าง `CLAUDE.md`, `GEMINI.md` และ `.github/copilot-instructions.md` เมื่อไฟล์ยังไม่มี โดยชี้ให้ agent อ่าน `AGENTS.md` ก่อน
 - Knip, axe-core และ Lefthook เป็น optional project capabilities: detector แนะนำ/ตรวจจับได้ แต่ bootstrap ไม่ติดตั้ง dependency ให้อัตโนมัติ
 
 อ่าน [ผลตรวจสเปกและสิ่งที่แก้](docs/AUDIT.md) ก่อนนำ stack นี้ไปใช้จริง

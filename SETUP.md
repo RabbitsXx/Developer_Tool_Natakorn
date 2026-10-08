@@ -9,6 +9,8 @@
 - `EXISTING_PROJECT`: preserve existing architecture and add only missing development capabilities.
 - `RESUME_CONFIGURED_PROJECT`: if architecture fingerprint is unchanged, do not reinstall/reconfigure; continue the actual task. If drift is detected, inspect it first; update the stored fingerprint only with an intentional `--accept-drift` run.
 - See `docs/BOOTSTRAP_PROTOCOL.md` for the state schema and drift rules.
+- Use `project.profile` in `.ai-kit/project.json` and its `definitionOfDone` items as the verification checklist for every matched profile; see `docs/PROFILES.md` for the mechanism.
+- Keep project-specific rules in overlays outside the kit core; see `docs/OVERLAYS.md`.
 
 ## 1. Discover
 
@@ -33,8 +35,8 @@
 - Resolve which packs exist from the filesystem or the manifest, never from a pack list written in prose: the directories under `.ai-kit/skills/`, the registered list in `toolchain.json` → `skills.packs`, or `.ai-kit/project.json` → `capabilities.potentiallyUseful`.
 - Open the one pack whose frontmatter description matches the task, then only the references that pack maps to; never load a whole pack or a pack "just in case".
 - Boundaries that a description match alone gets wrong: `ui-ux` is the web visual/flow layer while `mobile` owns native lifecycle, offline/sync, permissions, builds, and store release; `data-layer` needs stored-data changes and `api` needs an HTTP surface; `security` and `testing` strengthen the owning pack instead of replacing it; `infrastructure` is not application feature code.
-- Before mutating Git, database, cloud, container, or remote systems, classify the command with `node scripts/policy-check.mjs`; deny is a hard stop and approval-required needs explicit authorization. Decisions are appended to `.ai-kit/audit/events.jsonl`.
-- Persist only non-secret decisions, lessons, and handoff context with `node scripts/memory.mjs`; record session evidence with `node scripts/metrics.mjs`.
+- Before mutating Git, database, cloud, container, or remote systems in an installed project, classify the command with `node .ai-kit/bin/policy-check.mjs`; in the kit repository use `node scripts/policy-check.mjs`. Deny is a hard stop and approval-required needs explicit authorization. Decisions are appended to `.ai-kit/audit/events.jsonl`.
+- Persist only non-secret decisions, lessons, and handoff context with `node .ai-kit/bin/memory.mjs`; record session evidence with `node .ai-kit/bin/metrics.mjs`. In the kit repository use the matching `scripts/` paths.
 - For substantial UI work, define user goal, task flow, hierarchy, design-system constraints, responsive behavior, and visual/browser QA before implementation is considered complete.
 - Release work activates only once a release decision exists; preparing or executing a deploy, planning rollback, or verifying a release requires explicit authorization for production.
 
@@ -76,4 +78,4 @@ For a new Next.js project, prefer TypeScript, App Router, a linter, Tailwind whe
 
 Recommended script names are `dev`, `build`, `start`, `lint`, `typecheck`, `test`, and `format`; add `test:e2e` when Playwright or another browser suite is selected. Existing projects keep their established names.
 
-See `docs/BOOTSTRAP_PROTOCOL.md` for project entry/resume rules, `docs/CONTEXT_EFFICIENCY.md` for context-budget rules, `.ai-kit/skills/<pack>/SKILL.md` for task-scoped UI/API skills after bootstrap, and `docs/QUALITY_AND_PRODUCTION.md` for Playwright, accessibility, Knip, Lefthook, optional CI, and observability guidance.
+See `docs/BOOTSTRAP_PROTOCOL.md` for project entry/resume rules, `docs/PROFILES.md` for profile detection, `docs/OVERLAYS.md` for project-owned rules, `docs/CONTEXT_EFFICIENCY.md` for context-budget rules, `.ai-kit/skills/<pack>/` for task-scoped skills after bootstrap, and `docs/QUALITY_AND_PRODUCTION.md` for profile-aware verification and optional tooling guidance.

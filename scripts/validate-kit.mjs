@@ -14,6 +14,8 @@ const required = [
   'docs/BOOTSTRAP_PROTOCOL.md',
   'docs/ARCHITECTURE.md',
   'docs/AUDIT.md',
+  'docs/PROFILES.md',
+  'docs/OVERLAYS.md',
   'docs/INSTALLATION.md',
   'docs/CONTEXT_EFFICIENCY.md',
   'docs/QUALITY_AND_PRODUCTION.md',
@@ -21,6 +23,10 @@ const required = [
   'templates/PROJECT_CONTEXT.md',
   'templates/policy.json',
   'templates/memory/README.md',
+  'templates/overlay/OVERLAY.md',
+  'templates/agent-pointers/CLAUDE.md',
+  'templates/agent-pointers/GEMINI.md',
+  'templates/agent-pointers/.github/copilot-instructions.md',
   // Skill pack files are not listed here: they are validated from toolchain.json `skills.packs`, so
   // registering a new pack is a manifest change instead of an edit to this list.
   'templates/optional/playwright.config.ts',
@@ -32,6 +38,9 @@ const required = [
   'scripts/sync-skill-docs.mjs',
   'scripts/new-skill.mjs',
   'scripts/project-state.mjs',
+  'scripts/sync-runtime.mjs',
+  'scripts/sync-overlays.mjs',
+  'scripts/profile-info.mjs',
   'scripts/setup-project.mjs',
   'scripts/verify-bootstrap-protocol.mjs',
   'scripts/verify-tools.ps1',
@@ -45,13 +54,31 @@ const required = [
 
 for (const file of required) await access(path.join(root, file));
 const toolchain = JSON.parse(await readFile(path.join(root, 'toolchain.json'), 'utf8'));
-if (toolchain.schemaVersion < 5) throw new Error('toolchain schemaVersion must be >= 5');
+if (toolchain.schemaVersion < 6) throw new Error('toolchain schemaVersion must be >= 6');
 if (toolchain.bootstrap?.startPrompt !== 'START_PROMPT.md') throw new Error('bootstrap start prompt contract is missing');
 if (toolchain.bootstrap?.stateFile !== '.ai-kit/project.json') throw new Error('bootstrap state-file contract is missing');
 for (const mode of ['NEW_PROJECT', 'EXISTING_PROJECT', 'RESUME_CONFIGURED_PROJECT']) {
   if (!toolchain.bootstrap?.modes?.includes(mode)) throw new Error(`missing bootstrap mode: ${mode}`);
 }
 if (!toolchain.contextBudget?.smallTaskMaxFiles || !toolchain.contextBudget?.mediumTaskMaxFiles) throw new Error('context budget is missing');
+const profiles = toolchain.profiles?.items;
+if (!Array.isArray(profiles) || profiles.length === 0) throw new Error('toolchain.profiles.items must be a non-empty array');
+const defaultProfiles = profiles.filter((profile) => profile.default === true);
+if (defaultProfiles.length !== 1 || defaultProfiles[0].id !== toolchain.profiles.default) throw new Error('toolchain.profiles must have exactly one default profile matching profiles.default');
+const knownProfileTraits = toolchain.profiles.knownTraits;
+if (!Array.isArray(knownProfileTraits)) throw new Error('toolchain.profiles.knownTraits must be an array');
+for (const profile of profiles) {
+  if (!profile.id || !profile.summary || !profile.summaryTh) throw new Error('every profile needs id, summary, and summaryTh');
+  if (!Array.isArray(profile.definitionOfDone) || profile.definitionOfDone.length < 3) throw new Error(`profile ${profile.id} needs at least three definitionOfDone items`);
+  for (const trait of profile.traits ?? []) {
+    if (!knownProfileTraits.includes(trait)) throw new Error(`profile ${profile.id} uses unknown trait: ${trait}`);
+  }
+}
+const pointerFiles = toolchain.agentPointers?.files;
+if (!Array.isArray(pointerFiles) || pointerFiles.length !== 3) throw new Error('toolchain.agentPointers.files must register three agent-neutral pointers');
+for (const file of ['templates/agent-pointers/CLAUDE.md', 'templates/agent-pointers/GEMINI.md', 'templates/agent-pointers/.github/copilot-instructions.md']) {
+  if (!(await readFile(path.join(root, file), 'utf8')).includes('AGENTS.md')) throw new Error(`${file} must direct agents to AGENTS.md`);
+}
 for (const id of ['playwright', 'axe-playwright', 'knip', 'lefthook', 'sentry-or-opentelemetry']) {
   if (!toolchain.tools.some((tool) => tool.id === id)) throw new Error(`missing capability: ${id}`);
 }
@@ -93,6 +120,10 @@ const bootstrapSh = await readFile(path.join(root, 'scripts/bootstrap-project.sh
 for (const [name, text] of [['PowerShell bootstrap', bootstrapPs1], ['shell bootstrap', bootstrapSh]]) {
   if (!text.includes('START_PROMPT.md') || !text.includes('setup-project.mjs')) throw new Error(`${name} does not establish AI bootstrap state`);
   if (!text.includes('.ai-kit') || !text.includes('sync-skills.mjs')) throw new Error(`${name} does not synchronize Agent Skills packs`);
+  if (!text.includes('sync-runtime.mjs')) throw new Error(`${name} does not synchronize runtime helpers`);
+  for (const pointer of ['CLAUDE.md', 'GEMINI.md', 'copilot-instructions.md']) {
+    if (!text.includes(pointer)) throw new Error(`${name} does not copy ${pointer}`);
+  }
 }
 // PowerShell 5.1 reads BOM-less UTF-8 scripts as ANSI, so one non-ASCII character in a .ps1 file
 // becomes invalid UTF-8 in captured output that log tools and gates then cannot read. Node and

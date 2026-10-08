@@ -175,7 +175,7 @@ Bootstrap synchronizes every pack registered in `toolchain.json` under `skills.p
 
 <!-- skill-packs:start (generated from toolchain.json; run: node scripts/sync-skill-docs.mjs) -->
 
-_8 packs are registered in `toolchain.json` under `skills.packs`; each one is a folder with `SKILL.md` plus `references/` in the open Agent Skills format._
+_11 packs are registered in `toolchain.json` under `skills.packs`; each one is a folder with `SKILL.md` plus `references/` in the open Agent Skills format._
 
 | Pack | Source | Bootstrapped to | Use when |
 |---|---|---|---|
@@ -187,6 +187,9 @@ _8 packs are registered in `toolchain.json` under `skills.packs`; each one is a 
 | `infrastructure` | `skills/infrastructure` | `.ai-kit/skills/infrastructure` | Infrastructure changes, CI/CD, containers, cloud configuration, reliability, and operational verification. |
 | `mobile` | `skills/mobile` | `.ai-kit/skills/mobile` | Mobile architecture, platform boundaries, offline behavior, permissions, release builds, and device verification. |
 | `release` | `skills/release` | `.ai-kit/skills/release` | Planning and executing a production release safely: preflight verification, deploy execution, rollback readiness, release observability, and post-release confirmation. |
+| `automation` | `skills/automation` | `.ai-kit/skills/automation` | Reliable scripts, CLI interfaces, input validation, idempotency, and automation handoff. |
+| `data-analysis` | `skills/data-analysis` | `.ai-kit/skills/data-analysis` | Reproducible data inspection, cleaning, calculation, provenance, and honest reporting. |
+| `content-docs` | `skills/content-docs` | `.ai-kit/skills/content-docs` | Source-grounded documentation, operational procedures, consistency checks, and fact boundaries. |
 
 <!-- skill-packs:end -->
 
