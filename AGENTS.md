@@ -16,6 +16,20 @@ Build software with evidence, reproducible setup, minimal context waste, and saf
 6. Preserve pre-existing and unrelated changes. Do not stage, overwrite, stash, clean, reset, or delete work you do not own.
 7. Identify the smallest complete change, its acceptance criteria, and the commands needed to verify it.
 
+## One-shot delivery protocol
+
+- Before implementation, convert the request into a compact task brief: intended user outcome, concrete scope, repository constraints, observable acceptance cases, and verification steps. Use current source and project conventions to fill in details; do not make the user repeat facts already available in the repository.
+- Apply the prompt completeness gate to every nontrivial task. Load `prompt-enchant` when the user asks for prompt help, or when missing scope/acceptance or repeated corrections create a real risk of rework. For a clear small task, keep the check silent and act without rewriting the prompt.
+- If the user asks for an enchanted prompt only, return a copy-ready prompt without executing it. If the user asks to perform the work, use the brief internally and continue through implementation and verification.
+- For user-facing work, capture who uses it, in what situation, what they need to accomplish, and relevant interaction, visual, device, and accessibility constraints. For backend or tooling work, capture the caller, contract, failure behavior, and operational constraints that apply.
+- Keep the task brief separate from user-facing copy: acceptance cases and implementation constraints guide the build; do not show them to end users unless they directly help. For a short landing page, prioritize one audience, one user benefit, and one primary action.
+- Check the brief against the owning code, callers, and existing checks before editing. Include relevant empty, loading, error, boundary, permission, or rollback cases; omit cases that do not apply.
+- Resolve low-impact gaps with a reversible default consistent with the project and state the assumption. Ask only when a missing answer materially changes product behavior, architecture, security, data handling, or a destructive action.
+- Implement the complete scoped outcome, then compare it with every acceptance case and run the narrowest relevant verification. If a check fails, fix the specific unmet case and rerun it; do not broaden the change without evidence.
+- When the same correction recurs, preserve the learning as a project rule, example, or regression check where appropriate. Do not treat a longer prompt or a larger scope as a substitute for repository evidence.
+
+See `docs/ONE_SHOT_WORKFLOW.md` for the reusable task-brief template and research basis.
+
 Read `docs/BOOTSTRAP_PROTOCOL.md` before changing bootstrap/state behavior. A valid resume should continue the user's task without reinstalling or reconfiguring the project.
 
 ## Context-efficiency rules

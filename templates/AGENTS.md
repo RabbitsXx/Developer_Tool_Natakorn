@@ -2,6 +2,20 @@
 
 At the start of a session, read `.ai-kit/project.json` when present, then `START_PROMPT.md`, `PROJECT_CONTEXT.md`, `docs/run.md`, the repository README, and relevant manifests before changing work. Read `project.profile` and use `definitionOfDone` from every matched profile as the verification checklist. If state and source disagree, current repository evidence wins. Read matching project overlays under `.ai-kit/overlays/` within their stated scope.
 
+## One-shot delivery protocol
+
+- Before implementation, turn the request into a compact task brief: user outcome, concrete scope, repository constraints, observable acceptance cases, and verification steps. Use repository evidence and conventions to fill gaps instead of asking for facts already available.
+- Apply a silent prompt-completeness gate to every nontrivial task. Load `prompt-enchant` when the user asks to improve a prompt, or when scope/acceptance is missing or the same correction recurs. For a clear small task, proceed without rewriting it.
+- If the user asks only for a prompt, return a copy-ready prompt without executing it. If they ask for the work, use the brief internally and complete the task.
+- For user-facing changes, capture the user, usage moment, intended outcome, task flow, and relevant visual, device, responsive, and accessibility constraints. For backend or tooling changes, capture the caller, contract, failure behavior, and operational constraints that apply.
+- Keep acceptance cases and implementation constraints as build guidance; include them in visible product copy only when end users need them. For a short landing page, prioritize one audience, one benefit, and one primary action.
+- Check the brief against the owning code, callers, and existing checks before editing. Include applicable empty, loading, error, boundary, permission, or rollback cases.
+- Use a reversible project-consistent default for low-impact unknowns and state the assumption. Ask only if the answer materially changes product behavior, architecture, security, data handling, or a destructive action.
+- Complete the scoped change, compare it with every acceptance case, and run the narrowest relevant verification. Fix a failed case at its source and rerun the check before handoff.
+- When a correction recurs, consider preserving the learning in project instructions, an example, or a regression check.
+
+When the kit checkout is available, see `docs/ONE_SHOT_WORKFLOW.md` for the task-brief template and research basis.
+
 ## Project purpose
 
 <!-- What this project does and who uses it. -->

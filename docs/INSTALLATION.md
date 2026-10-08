@@ -177,7 +177,7 @@ Bootstrap synchronizes every pack registered in `toolchain.json` under `skills.p
 
 <!-- skill-packs:start (generated from toolchain.json; run: node scripts/sync-skill-docs.mjs) -->
 
-_11 packs are registered in `toolchain.json` under `skills.packs`; each one is a folder with `SKILL.md` plus `references/` in the open Agent Skills format._
+_12 packs are registered in `toolchain.json` under `skills.packs`; each one is a folder with `SKILL.md` plus `references/` in the open Agent Skills format._
 
 | Pack | Source | Bootstrapped to | Use when |
 |---|---|---|---|
@@ -192,6 +192,7 @@ _11 packs are registered in `toolchain.json` under `skills.packs`; each one is a
 | `automation` | `skills/automation` | `.ai-kit/skills/automation` | Reliable scripts, CLI interfaces, input validation, idempotency, and automation handoff. |
 | `data-analysis` | `skills/data-analysis` | `.ai-kit/skills/data-analysis` | Reproducible data inspection, cleaning, calculation, provenance, and honest reporting. |
 | `content-docs` | `skills/content-docs` | `.ai-kit/skills/content-docs` | Source-grounded documentation, operational procedures, consistency checks, and fact boundaries. |
+| `prompt-enchant` | `skills/prompt-enchant` | `.ai-kit/skills/prompt-enchant` | Turn rough task requests into concise, repository-grounded, verifiable instructions for coding agents. |
 
 <!-- skill-packs:end -->
 

@@ -10,7 +10,10 @@
       "evidence": "https://github.github.com/spec-kit/reference/integrations.html",
       "observedResult": "Documents per-agent installation directories and SHA-256 tracking that preserves modified integration files.",
       "adoptedPattern": "Track ownership and installed hashes, plan changes first, and block upgrades when managed files have local edits.",
-      "implementation": ["scripts/kit-lifecycle.mjs", "tests/lifecycle.test.mjs"],
+      "implementation": [
+        "scripts/kit-lifecycle.mjs",
+        "tests/lifecycle.test.mjs"
+      ],
       "limitation": "This is evidence for the installation design, not a measured productivity improvement for this kit."
     },
     {
@@ -20,7 +23,10 @@
       "evidence": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
       "observedResult": "Ships composable workflow skills, debugging procedures, and an explicit verification-before-completion skill.",
       "adoptedPattern": "Require executed verification evidence and structured acceptance cases instead of generic completion claims.",
-      "implementation": ["scripts/verify-kit.mjs", "docs/OPEN_SOURCE_FOUNDATIONS.md"],
+      "implementation": [
+        "scripts/verify-kit.mjs",
+        "docs/OPEN_SOURCE_FOUNDATIONS.md"
+      ],
       "limitation": "No claim that its agent methodology has been independently benchmarked here; no upstream skill text is copied."
     },
     {
@@ -30,7 +36,11 @@
       "evidence": "https://repomix.com/guide/security",
       "observedResult": "Documents repository packing, ignore rules, and secret detection before context sharing.",
       "adoptedPattern": "Keep repository context local, exclude sensitive/generated files, and review packed output before sharing.",
-      "implementation": ["repomix.config.json", "templates/repomixignore", "docs/CONTEXT_EFFICIENCY.md"],
+      "implementation": [
+        "repomix.config.json",
+        "templates/repomixignore",
+        "docs/CONTEXT_EFFICIENCY.md"
+      ],
       "limitation": "Scanning and ignore rules cannot guarantee that all sensitive content is excluded. Existing integration is retained."
     },
     {
@@ -40,8 +50,40 @@
       "evidence": "https://github.com/rtk-ai/rtk",
       "observedResult": "Provides command-output filtering and a gain command to inspect token savings.",
       "adoptedPattern": "Probe the official executable and measure actual local output savings rather than promising a universal percentage.",
-      "implementation": ["scripts/doctor.mjs", "RTK.md", "docs/CONTEXT_EFFICIENCY.md"],
+      "implementation": [
+        "scripts/doctor.mjs",
+        "RTK.md",
+        "docs/CONTEXT_EFFICIENCY.md"
+      ],
       "limitation": "Upstream savings claims do not measure this kit's end-to-end model cost, latency, or software quality."
+    },
+    {
+      "id": "vercel-v0-prompting",
+      "repository": "https://github.com/v0-by-Vercel",
+      "license": "Proprietary product; public guidance only",
+      "evidence": "https://vercel.com/blog/how-to-prompt-v0",
+      "observedResult": "Official v0 guidance centers UI prompts on product surface, context of use, and constraints/taste; the post reports fewer follow-up prompts in its own examples.",
+      "adoptedPattern": "Capture concrete behavior, user/context/outcome, constraints, acceptance cases, and verification before implementation.",
+      "implementation": [
+        "START_PROMPT.md",
+        "templates/AGENTS.md",
+        "docs/ONE_SHOT_WORKFLOW.md",
+        "docs/OPEN_SOURCE_FOUNDATIONS.md"
+      ],
+      "limitation": "The v0 product is proprietary; its separate Apache-2.0 API SDK does not expose the product implementation. Reported prompt results are vendor examples, not an independent benchmark of this kit."
+    },
+    {
+      "id": "promptfoo",
+      "repository": "https://github.com/promptfoo/promptfoo",
+      "license": "MIT",
+      "evidence": "https://www.promptfoo.dev/docs/getting-started/",
+      "observedResult": "An open-source framework tests prompts against representative test cases and checks outputs with assertions across providers.",
+      "adoptedPattern": "Define observable pass/fail acceptance cases and verify behavior against them; keep external evaluation tooling optional.",
+      "implementation": [
+        "docs/ONE_SHOT_WORKFLOW.md",
+        "docs/OPEN_SOURCE_FOUNDATIONS.md"
+      ],
+      "limitation": "Promptfoo evaluates LLM applications and prompts; this kit does not integrate its runner or claim a measured reduction in coding-agent repair cycles."
     }
   ]
 }

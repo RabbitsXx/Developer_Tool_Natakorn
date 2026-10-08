@@ -3,7 +3,7 @@
  * eval-kit.mjs - run deterministic kit-level evals without external services.
  * These evals measure contract behavior, not model intelligence.
  */
-import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { classifyCommand, redact } from './policy-check.mjs';
@@ -17,6 +17,17 @@ async function check(name, fn) {
   catch (error) { results.push({ name, status: 'FAIL', detail: error.message }); }
 }
 try {
+  await check('prompt-enchant-preserves-prompt-only-vs-execution', async () => {
+    const skill = await readFile(path.join(import.meta.dirname, '..', 'skills', 'prompt-enchant', 'SKILL.md'), 'utf8');
+    if (!skill.includes('Do not convert a request to perform work into a prompt-only answer')) throw new Error('execution requests could be downgraded to prompt-only');
+    if (!skill.includes('return a copy-ready prompt in the user\'s language')) throw new Error('prompt-only requests lack a copy-ready response rule');
+  });
+  await check('prompt-enchant-avoids-overhead-on-clear-tasks', async () => {
+    const skill = await readFile(path.join(import.meta.dirname, '..', 'skills', 'prompt-enchant', 'SKILL.md'), 'utf8');
+    if (!skill.includes('For a clear atomic task, proceed without a prompt rewrite')) throw new Error('clear tasks are forced through prompt rewriting');
+    const evidence = await readFile(path.join(import.meta.dirname, '..', 'skills', 'prompt-enchant', 'references', '01-evidence-based-principles.md'), 'utf8');
+    if (!evidence.includes('not a direct test of repository coding agents or rework time')) throw new Error('research limits are not disclosed');
+  });
   await check('policy-denies-destructive-command', () => {
     if (classifyCommand('git reset --hard HEAD').decision !== 'deny') throw new Error('destructive command was not denied');
   });

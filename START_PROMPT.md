@@ -136,6 +136,23 @@ Details live in each pack. These rules must survive even when the pack is not re
 
 For tasks matching no pack, do not load a pack.
 
+## One-shot delivery protocol
+
+Before editing, shape the request into a short task brief using repository evidence:
+
+- **Outcome:** who needs what result, in which use context, and why.
+- **Scope:** concrete behavior or surface to change, plus constraints and explicit non-goals.
+- **Acceptance:** observable success cases and relevant edge/failure cases.
+- **Verification:** the existing command, route, or workflow that proves those cases.
+
+For every nontrivial task, silently check that outcome, scope/constraints, observable acceptance, and relevant verification are clear. Load the `prompt-enchant` skill when the user explicitly asks to improve a prompt, or when missing scope/acceptance or repeated corrections risk rework. For a clear small task, proceed without rewriting the request. If the user asks for a prompt only, return a copy-ready prompt without executing it; when the user asks for the work, use the brief internally and continue through verification.
+
+For web UI, include the actual content/data, user actions, task flow, visual tone, target device, layout assumptions, responsiveness, and accessibility needs that affect the request. For APIs or data work, include the caller, request/result contract, authorization or data constraints, failure behavior, and rollback needs that apply. Inspect the owning files and existing project conventions before writing the brief; do not invent requirements the repository already answers. Treat acceptance cases and implementation constraints as build guidance, not visible product copy, unless end users need them. For a short landing page, prioritize one audience, one user benefit, and one primary action.
+
+Do a brief completeness pass before implementation: check applicable empty/loading/error states, boundaries, permissions, and integration points. Use a reversible project-consistent default for low-impact unknowns and state it. Ask only when an unresolved choice materially affects product behavior, architecture, security, data handling, or a destructive action. Then implement the full scoped outcome, verify against the acceptance cases, and fix only evidenced gaps before handoff.
+
+One-shot means a complete first implementation attempt with explicit acceptance checks; it does not guarantee that generated work never needs correction. See `docs/ONE_SHOT_WORKFLOW.md` in the kit checkout for a reusable prompt template.
+
 ## Security
 
 - Never print or commit `.env` secrets, credentials, keys, tokens, database dumps, or customer data.

@@ -182,6 +182,25 @@
         "summary": "Source-grounded documentation, operational procedures, consistency checks, and fact boundaries.",
         "summaryTh": "เอกสารและคู่มือที่ยึดแหล่งข้อมูล ตรวจความสอดคล้อง และแยกข้อเท็จจริง",
         "recommendFor": ["docs-project"]
+      },
+      {
+        "id": "prompt-enchant",
+        "version": 1,
+        "sourcePath": "skills/prompt-enchant",
+        "bootstrapPath": ".ai-kit/skills/prompt-enchant",
+        "activation": "Load only for prompt enchant work; read SKILL.md, then open only the reference files the task maps to.",
+        "summary": "Turn rough task requests into concise, repository-grounded, verifiable instructions for coding agents.",
+        "summaryTh": "แปลงคำขอสั้นหรือคลุมเครือเป็น prompt สำหรับ coding agent ที่ยึด repo ชัด มีเกณฑ์ผ่านและวิธีตรวจ โดยไม่ยืดเกินจำเป็น",
+        "recommendFor": [
+          "web-framework",
+          "http-api",
+          "database",
+          "mobile",
+          "infrastructure",
+          "script-project",
+          "data-project",
+          "docs-project"
+        ]
       }
     ]
   },

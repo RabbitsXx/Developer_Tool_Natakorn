@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101311">
+  <meta name="description" content="Developer Tool Natakorn helps AI coding agents understand a project, carry context forward, and check commands before they run.">
+  <title>Developer Tool Natakorn — Better starts for AI coding agents</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f2f1e8;
+      --muted: #a5aaa2;
+      --bg: #101311;
+      --panel: #171c18;
+      --line: rgba(242, 241, 232, .13);
+      --acid: #c9f36b;
+      --orange: #ff8059;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.55; }
+    a { color: inherit; }
+    a:focus-visible { outline: 3px solid var(--acid); outline-offset: 5px; border-radius: 3px; }
+    .skip-link { position: absolute; z-index: 5; top: 12px; left: 12px; padding: 10px 14px; transform: translateY(-160%); background: var(--acid); color: #12160e; font-weight: 750; }
+    .skip-link:focus { transform: translateY(0); }
+    .wrap { width: min(1120px, calc(100% - 48px)); margin-inline: auto; }
+    .topbar { min-height: 78px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+    .brand { display: inline-flex; gap: 12px; align-items: center; text-decoration: none; font-size: .9rem; font-weight: 720; letter-spacing: -.02em; }
+    .brand-mark { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; background: var(--acid); color: #12160e; font: 800 .8rem var(--mono); }
+    nav { display: flex; align-items: center; gap: 28px; font-size: .82rem; color: var(--muted); }
+    nav a { text-decoration: none; }
+    nav a:hover { color: var(--ink); }
+    nav .nav-cta { color: var(--acid); }
+    section { scroll-margin-top: 28px; }
+    .hero { min-height: 610px; display: grid; grid-template-columns: 1.06fr .94fr; align-items: center; gap: 60px; padding-block: 74px 84px; }
+    .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--acid); font: 600 .72rem var(--mono); text-transform: uppercase; letter-spacing: .1em; }
+    .eyebrow::before { content: ""; width: 22px; height: 1px; background: currentColor; }
+    h1 { max-width: 660px; margin: 22px 0 20px; font-size: clamp(3.25rem, 6.3vw, 5.55rem); line-height: .99; letter-spacing: -.075em; font-weight: 690; }
+    h1 em { color: var(--acid); font-style: normal; }
+    .lede { max-width: 520px; color: #b4b9b1; font-size: 1.08rem; line-height: 1.75; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 31px; }
+    .button { min-height: 48px; display: inline-flex; gap: 12px; align-items: center; justify-content: center; padding: 0 17px; border: 1px solid var(--line); border-radius: 7px; text-decoration: none; font-size: .88rem; font-weight: 680; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+    .button:hover { transform: translateY(-2px); border-color: rgba(201,243,107,.55); }
+    .button.primary { background: var(--acid); border-color: var(--acid); color: #12160e; }
+    .button.primary:hover { background: #d7ff83; }
+    .button .arrow { font-size: 1.08rem; }
+    .hero-note { display: flex; gap: 9px; align-items: center; margin-top: 24px; color: #838b82; font: .72rem var(--mono); }
+    .hero-note svg { color: var(--acid); }
+    .terminal { position: relative; overflow: hidden; background: linear-gradient(145deg, #1c231e, #151916 65%); border: 1px solid rgba(201,243,107,.2); border-radius: 12px; box-shadow: 0 28px 90px rgba(0,0,0,.36); transform: rotate(1.2deg); }
+    .terminal::after { position: absolute; content: ""; width: 180px; height: 180px; right: -104px; bottom: -115px; border: 1px solid rgba(201,243,107,.16); border-radius: 50%; box-shadow: 0 0 0 20px rgba(201,243,107,.025), 0 0 0 42px rgba(201,243,107,.02); }
+    .term-bar { display: flex; align-items: center; gap: 7px; height: 45px; padding: 0 16px; border-bottom: 1px solid var(--line); color: #8d968d; font: .68rem var(--mono); }
+    .dot { width: 7px; height: 7px; background: #586057; border-radius: 50%; }
+    .term-title { margin-left: auto; }
+    .term-body { position: relative; z-index: 1; padding: 26px 25px 29px; font: .77rem/2 var(--mono); }
+    .term-comment { color: #7d897d; }
+    .term-command { color: #e7e8dc; }
+    .term-command span { color: var(--acid); }
+    .term-output { padding-left: 20px; color: #a9b3a7; }
+    .term-output strong { color: var(--acid); font-weight: 500; }
+    .term-divider { height: 1px; margin: 15px 0; background: var(--line); }
+    .term-cursor { display: inline-block; width: 7px; height: 14px; vertical-align: -2px; background: var(--acid); animation: blink 1.1s steps(2, start) infinite; }
+    @keyframes blink { to { visibility: hidden; } }
+    .facts { padding: 18px 0 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, 1fr); }
+    .fact { display: flex; justify-content: center; align-items: baseline; gap: 9px; padding: 5px 15px; color: var(--muted); font-size: .78rem; }
+    .fact + .fact { border-left: 1px solid var(--line); }
+    .fact b { color: var(--ink); font: 600 .84rem var(--mono); }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 30px; }
+    h2 { max-width: 570px; margin: 13px 0 0; font-size: clamp(2rem, 4vw, 3.3rem); line-height: 1.05; letter-spacing: -.06em; font-weight: 650; }
+    .section-head p { max-width: 310px; margin: 0 0 3px; color: var(--muted); font-size: .91rem; }
+    .workflow { padding-block: 100px 104px; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .step { min-height: 230px; padding: 25px 24px 26px; background: var(--panel); }
+    .step + .step { border-left: 1px solid var(--line); }
+    .step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 37px; color: #879087; font: .72rem var(--mono); }
+    .step-icon { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 9px; color: var(--acid); }
+    h3 { margin: 0 0 10px; font-size: 1.06rem; letter-spacing: -.025em; }
+    .step p { max-width: 290px; margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.7; }
+    .step code { color: #dde4d8; font: .78rem var(--mono); }
+    .closing { padding-block: 0 92px; }
+    .closing-card { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 38px 42px; border: 1px solid rgba(201,243,107,.3); border-radius: 11px; background: radial-gradient(ellipse at 80% 50%, rgba(201,243,107,.09), transparent 50%), #171c18; }
+    .closing-card::before { content: ""; position: absolute; width: 230px; height: 230px; right: 20%; top: -190px; border: 1px solid rgba(201,243,107,.18); border-radius: 50%; box-shadow: 0 0 0 24px rgba(201,243,107,.025),0 0 0 50px rgba(201,243,107,.02); }
+    .closing-copy { position: relative; }
+    .closing h2 { font-size: clamp(1.8rem, 3vw, 2.7rem); }
+    .closing p { margin: 10px 0 0; color: var(--muted); font-size: .88rem; }
+    .closing .button { position: relative; flex: 0 0 auto; }
+    footer { min-height: 75px; display: flex; justify-content: space-between; align-items: center; gap: 20px; border-top: 1px solid var(--line); color: #818a80; font-size: .73rem; }
+    footer a { text-decoration: none; }
+    footer a:hover { color: var(--acid); }
+    @media (max-width: 760px) {
+      .wrap { width: min(100% - 36px, 600px); }
+      .topbar { min-height: 68px; }
+      nav { gap: 17px; }
+      nav a:first-child { display: none; }
+      .hero { min-height: 0; grid-template-columns: 1fr; gap: 44px; padding-block: 66px 58px; }
+      h1 { max-width: 560px; font-size: clamp(3.4rem, 12vw, 5.25rem); }
+      .terminal { max-width: 520px; width: 100%; justify-self: center; }
+      .facts { gap: 0; }
+      .fact { flex-direction: column; align-items: center; gap: 1px; text-align: center; font-size: .69rem; }
+      .workflow { padding-block: 78px; }
+      .section-head { display: block; }
+      .section-head p { margin-top: 17px; }
+      .steps { grid-template-columns: 1fr; }
+      .step { min-height: 0; padding: 21px 22px 23px; }
+      .step + .step { border-left: 0; border-top: 1px solid var(--line); }
+      .step-top { margin-bottom: 19px; }
+      .step p { max-width: 460px; }
+      .closing { padding-bottom: 67px; }
+      .closing-card { align-items: flex-start; flex-direction: column; padding: 29px 25px; }
+    }
+    @media (max-width: 420px) {
+      .wrap { width: calc(100% - 30px); }
+      .brand { gap: 8px; font-size: .82rem; }
+      .brand-mark { width: 28px; height: 28px; }
+      nav { gap: 12px; font-size: .74rem; }
+      .hero { padding-top: 51px; }
+      .lede { font-size: 1rem; }
+      .actions { align-items: stretch; flex-direction: column; }
+      .button { width: 100%; }
+      .term-body { padding: 21px 15px 24px; font-size: .68rem; }
+      .fact { padding-inline: 8px; font-size: .62rem; }
+      footer { align-items: flex-start; flex-direction: column; justify-content: center; padding-block: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="wrap topbar">
+    <a class="brand" href="#top" aria-label="Developer Tool Natakorn home">
+      <span class="brand-mark" aria-hidden="true">N.</span><span>Developer Tool Natakorn</span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="#workflow">How it works</a>
+      <a href="#get-started" class="nav-cta">Get started <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+  <main id="main">
+    <section class="wrap hero" id="top" aria-labelledby="hero-title">
+      <div>
+        <div class="eyebrow">An AI coding toolkit</div>
+        <h1 id="hero-title">Give your agent a <em>better start.</em></h1>
+        <p class="lede">A small CLI toolkit that helps coding agents understand the project, keep useful context between sessions, and check commands before they run.</p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/RabbitsXx/Developer_Tool_Natakorn">Explore the toolkit <span class="arrow" aria-hidden="true">↗</span></a>
+          <a class="button" href="#workflow">See the workflow <span class="arrow" aria-hidden="true">↓</span></a>
+        </div>
+        <div class="hero-note">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8.2 6.2 11 13 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Node.js 22+ · Windows, macOS &amp; Linux · No runtime dependencies
+        </div>
+      </div>
+      <div class="terminal" role="img" aria-label="Illustration of the toolkit inspecting a project and identifying its stack">
+        <div class="term-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="term-title">project / terminal</span></div>
+        <div class="term-body">
+          <div class="term-comment"># Start with what is already here</div>
+          <div class="term-command"><span>$</span> node bin/natakorn.mjs inspect</div>
+          <div class="term-output">Reading project signals…<br><strong>✓</strong> Stack and capabilities detected<br><strong>✓</strong> Existing setup preserved</div>
+          <div class="term-divider"></div>
+          <div class="term-comment"># Carry context into the next session</div>
+          <div class="term-command"><span>$</span> node bin/natakorn.mjs status</div>
+          <div class="term-output">Tracked guidance: <strong>up to date</strong></div>
+          <div class="term-command"><span>$</span> <i class="term-cursor"></i></div>
+        </div>
+      </div>
+    </section>
+    <div class="wrap facts" aria-label="Toolkit highlights">
+      <div class="fact"><b>01</b><span>Inspect before setup</span></div>
+      <div class="fact"><b>02</b><span>Preserve project work</span></div>
+      <div class="fact"><b>03</b><span>Verify with one CLI</span></div>
+    </div>
+    <section class="wrap workflow" id="workflow" aria-labelledby="workflow-title">
+      <div class="section-head">
+        <div><div class="eyebrow">Less guessing, clear steps</div><h2 id="workflow-title">A steadier way into any codebase.</h2></div>
+        <p>Start from the repository you have. Add guidance where it is missing, then keep an eye on what changes.</p>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <div class="step-top"><span>01 / INSPECT</span><span class="step-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></div>
+          <h3>See the project clearly</h3><p>Detect the stack, profiles, and useful capabilities before deciding what the repo needs.</p>
+        </article>
+        <article class="step">
+          <div class="step-top"><span>02 / INIT</span><span class="step-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span></div>
+          <h3>Add only what is missing</h3><p>Install agent instructions and skills with a dry run to preview changes before applying them.</p>
+        </article>
+        <article class="step">
+          <div class="step-top"><span>03 / VERIFY</span><span class="step-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="m4 10 4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+          <h3>Keep changes reviewable</h3><p>Check tracked files for edits or drift, and run the repository's verification workflow.</p></article>
+      </div>
+    </section>
+    <section class="closing" id="get-started" aria-labelledby="closing-title">
+      <div class="wrap closing-card">
+        <div class="closing-copy"><div class="eyebrow">Ready when you are</div><h2 id="closing-title">Make the first pass count.</h2><p>Read the quick start and try a dry run in your project.</p></div>
+        <a class="button primary" href="https://github.com/RabbitsXx/Developer_Tool_Natakorn#เริ่มใช้งาน">Open the quick start <span class="arrow" aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+  </main>
+  <footer class="wrap">
+    <span>© Developer Tool Natakorn</span>
+    <a href="https://github.com/RabbitsXx/Developer_Tool_Natakorn">Open source on GitHub <span aria-hidden="true">↗</span></a>
+  </footer>
+</body>
+</html>
