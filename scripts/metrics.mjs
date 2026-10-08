@@ -2,6 +2,8 @@
 /** Append compact, non-secret agent session metrics to .ai-kit/metrics/events.jsonl. */
 import { appendFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { assertSafePath } from './safe-paths.mjs';
+import { redact } from './policy-check.mjs';
 
 function parseArgs(argv) {
   const args = { target: '.', session: null, event: null, task: null, status: null, files: null, tokens: null, durationMs: null, note: '' };
@@ -23,6 +25,9 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 if (!args.event) throw new Error('Usage: metrics.mjs --event session-start|session-end|check --session ID');
+if (!['session-start', 'session-end', 'check'].includes(args.event)) throw new Error('Unknown metrics event');
+for (const key of ['files', 'tokens', 'durationMs']) if (args[key] !== null && (!Number.isSafeInteger(args[key]) || args[key] < 0)) throw new Error(`${key} must be a nonnegative safe integer`);
+for (const value of [args.session, args.task, args.status, args.note]) if (value && redact(value) !== value) throw new Error('Metrics cannot contain secret-like values');
 const session = args.session ?? `session-${Date.now()}`;
 const event = {
   timestamp: new Date().toISOString(),
@@ -36,7 +41,7 @@ const event = {
   note: String(args.note).replace(/[\r\n]/g, ' ').slice(0, 240),
 };
 const clean = Object.fromEntries(Object.entries(event).filter(([, value]) => value !== undefined && value !== ''));
-const file = path.join(path.resolve(args.target), '.ai-kit', 'metrics', 'events.jsonl');
+const file = await assertSafePath(args.target, '.ai-kit/metrics/events.jsonl');
 await mkdir(path.dirname(file), { recursive: true });
 await appendFile(file, `${JSON.stringify(clean)}\n`, 'utf8');
 console.log(JSON.stringify({ ok: true, file: path.relative(path.resolve(args.target), file), event: clean }, null, 2));

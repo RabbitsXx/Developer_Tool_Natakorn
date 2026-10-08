@@ -4,6 +4,7 @@
  * It never executes the command. It records a redacted decision in .ai-kit/audit/events.jsonl.
  */
 import { appendFile, mkdir, readFile } from 'node:fs/promises';
+import { assertSafePath } from './safe-paths.mjs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -14,6 +15,8 @@ export const DEFAULT_POLICY = {
     'rm\\s+-rf\\s+/',
     'git\\s+reset\\s+--hard',
     'git\\s+clean\\s+-fd',
+    '\\bgit\\s+push\\b.*(?:--force(?:-with-lease)?|-f)(?:\\s|$)',
+    '\\b(Remove-Item|del|erase|rmdir)\\b.*(?:-Recurse|/s)\\b',
     '(drop|truncate)\\s+(database|table|schema)',
     '(terraform|pulumi)\\s+destroy',
     '(vercel|supabase|aws|gcloud|az)\\s+.*\\b(delete|destroy|remove)\\b',
@@ -27,6 +30,9 @@ export const DEFAULT_POLICY = {
     '\\b(npx\\s+)?prisma\\s+migrate\\s+deploy\\b',
     '\\b(dbmate|flyway|knex)\\s+migrate\\b',
     '\\b(railway|render|netlify)\\s+deploy\\b',
+    '\\b(node|python|python3|ruby|perl)\\s+(?:-e|-c)\\b',
+    '\\b(powershell|pwsh)\\b.*-(?:Command|EncodedCommand|c|enc)\\b',
+    '\\b(bash|sh|cmd)\\s+(?:-c|/c)\\b',
   ],
 };
 
@@ -50,32 +56,45 @@ function parseArgs(argv) {
 
 export function redact(value) {
   return String(value)
-    .replace(/((?:token|secret|password|passwd|api[_-]?key|private[_-]?key|database_url)\s*[=:]\s*)([^\s;&]+)/gi, '$1[REDACTED]')
-    .replace(/(https?:\/\/)([^\s/@]+):([^\s/@]+)@/gi, '$1[REDACTED]@[REDACTED]@')
+    .replace(/((?:[\w-]*token|[\w-]*secret|password|passwd|api[_-]?key|private[_-]?key|database_url)["']?\s*[=:]\s*)(["'][^"']*["']|[^\s;&,}]+)/gi, '$1[REDACTED]')
+    .replace(/(--(?:[\w-]*token|[\w-]*secret|password|passwd|api[_-]?key|private[_-]?key)\s+)(["'][^"']*["']|[^\s;&]+)/gi, '$1[REDACTED]')
+    .replace(/(authorization["']?\s*[:=]\s*["']?(?:bearer|basic)\s+)[^\s"']+/gi, '$1[REDACTED]')
+    .replace(/([a-z][a-z0-9+.-]*:\/\/)[^\s/@]+:[^\s/@]+@/gi, '$1[REDACTED]@')
+    .replace(/\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})\b/g, '[REDACTED-TOKEN]')
     .replace(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/g, '[REDACTED-KEY]');
 }
 
 export function classifyCommand(command, policy = DEFAULT_POLICY) {
-  const normalized = String(command).replace(/\s+/g, ' ').trim();
-  for (const pattern of policy.denyPatterns ?? []) {
+  // Account for common Git global options before matching the actual operation.
+  const normalized = String(command).replace(/\s+/g, ' ').trim().replace(/\bgit\s+(?:(?:-C|-c|--git-dir|--work-tree)\s+(?:"[^"]*"|'[^']*'|\S+)\s+|--(?:git-dir|work-tree)=\S+\s+)+/gi, 'git ');
+  for (const pattern of [...new Set([...DEFAULT_POLICY.denyPatterns, ...(policy.denyPatterns ?? [])])]) {
     if (new RegExp(pattern, 'i').test(normalized)) return { decision: 'deny', matched: pattern };
   }
-  for (const pattern of policy.approvalPatterns ?? []) {
+  for (const pattern of [...new Set([...DEFAULT_POLICY.approvalPatterns, ...(policy.approvalPatterns ?? [])])]) {
     if (new RegExp(pattern, 'i').test(normalized)) return { decision: 'approval_required', matched: pattern };
   }
   return { decision: 'allow', matched: null };
 }
 
-async function loadPolicy(target) {
+export async function loadPolicy(target) {
   try {
-    return JSON.parse(await readFile(path.join(path.resolve(target), '.ai-kit', 'policy.json'), 'utf8'));
-  } catch {
-    return DEFAULT_POLICY;
+    const file = await assertSafePath(target, '.ai-kit/policy.json');
+    const policy = JSON.parse((await readFile(file, 'utf8')).replace(/^\uFEFF/, ''));
+    if (!policy || typeof policy !== 'object' || Array.isArray(policy)) throw new Error('Policy must be an object');
+    for (const key of ['denyPatterns', 'approvalPatterns']) {
+      if (policy[key] !== undefined && (!Array.isArray(policy[key]) || policy[key].some((item) => typeof item !== 'string'))) throw new Error(`Invalid policy ${key}`);
+      for (const pattern of policy[key] ?? []) new RegExp(pattern, 'i');
+    }
+    await assertSafePath(target, policy.auditLog ?? DEFAULT_POLICY.auditLog);
+    return policy;
+  } catch (error) {
+    if (error.code === 'ENOENT') return DEFAULT_POLICY;
+    throw new Error(`Cannot load command policy: ${redact(error.message)}`);
   }
 }
 
 export async function record(target, event, policy) {
-  const file = path.join(path.resolve(target), policy.auditLog ?? DEFAULT_POLICY.auditLog);
+  const file = await assertSafePath(target, policy.auditLog ?? DEFAULT_POLICY.auditLog);
   await mkdir(path.dirname(file), { recursive: true });
   await appendFile(file, `${JSON.stringify(event)}\n`, 'utf8');
   return file;
@@ -86,6 +105,7 @@ async function main() {
   const policy = await loadPolicy(args.target);
   const classification = classifyCommand(args.command, policy);
   const approved = classification.decision === 'approval_required' && args.approved;
+  if (approved && !args.reason?.trim()) throw new Error('An approved command requires --reason describing the existing authorization');
   const effective = classification.decision === 'approval_required' && approved ? 'allow' : classification.decision;
   const event = {
     timestamp: new Date().toISOString(),
@@ -104,4 +124,7 @@ async function main() {
   else if (effective === 'approval_required') process.exitCode = 2;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try { await main(); }
+  catch (error) { console.error(JSON.stringify({ ok: false, error: redact(error.message) })); process.exitCode = 1; }
+}

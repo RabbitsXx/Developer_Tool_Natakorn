@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /** Record or inspect non-secret cross-session memory and handoff artifacts. */
-import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile } from 'node:fs/promises';
+import { assertSafePath, atomicWrite } from './safe-paths.mjs';
+import { redact } from './policy-check.mjs';
 import path from 'node:path';
 
 function parseArgs(argv) {
@@ -19,7 +21,7 @@ function parseArgs(argv) {
 }
 
 function rejectSecrets(value) {
-  if (/((?:token|secret|password|passwd|api[_-]?key|private[_-]?key|database_url)\s*[=:])|-----BEGIN/i.test(String(value))) {
+  if (redact(value) !== String(value) || /-----BEGIN/i.test(String(value))) {
     throw new Error('Memory cannot contain secret-like values or private keys');
   }
 }
@@ -27,15 +29,17 @@ function rejectSecrets(value) {
 const args = parseArgs(process.argv.slice(2));
 const root = path.resolve(args.target);
 const memoryDir = path.join(root, '.ai-kit', 'memory');
-const handoff = path.join(memoryDir, 'handoff.md');
+const handoff = await assertSafePath(root, '.ai-kit/memory/handoff.md');
 if (args.print) {
   console.log(await readFile(handoff, 'utf8').catch(() => 'No handoff recorded.'));
 } else {
   if (!args.kind || !args.text) throw new Error('Usage: memory.mjs --kind decision|lesson|handoff --text "..."');
-  rejectSecrets(args.text);
+  for (const value of [args.text, args.status, args.owner ?? '']) rejectSecrets(value);
+  if (!['decision', 'lesson', 'handoff'].includes(args.kind)) throw new Error('--kind must be decision, lesson, or handoff');
+  await assertSafePath(root, `.ai-kit/memory/${args.kind === 'handoff' ? 'handoff.md' : `${args.kind}s.jsonl`}`);
   await mkdir(memoryDir, { recursive: true });
   if (args.kind === 'handoff') {
-    await writeFile(handoff, `# Current handoff\n\n- Status: ${args.status}\n- Owner: ${args.owner ?? 'unassigned'}\n- Updated: ${new Date().toISOString()}\n\n${args.text}\n`, 'utf8');
+    await atomicWrite(root, '.ai-kit/memory/handoff.md', `# Current handoff\n\n- Status: ${args.status}\n- Owner: ${args.owner ?? 'unassigned'}\n- Updated: ${new Date().toISOString()}\n\n${args.text}\n`);
   } else if (args.kind === 'decision' || args.kind === 'lesson') {
     const file = path.join(memoryDir, `${args.kind}s.jsonl`);
     await appendFile(file, `${JSON.stringify({ timestamp: new Date().toISOString(), text: args.text, status: args.status, owner: args.owner })}\n`, 'utf8');

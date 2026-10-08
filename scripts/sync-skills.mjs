@@ -12,6 +12,8 @@
 import { access, copyFile, mkdir, readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { constants } from 'node:fs';
+import { assertSafePath } from './safe-paths.mjs';
 
 const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -61,19 +63,20 @@ for (const pack of packs) {
     throw new Error(`Skill pack ${pack?.id ?? '(unnamed)'} is missing id, sourcePath, or bootstrapPath`);
   }
   const sourceDir = path.join(kitRoot, pack.sourcePath);
+  await assertSafePath(kitRoot, `${pack.sourcePath}/${entry}`);
   if (!(await exists(path.join(sourceDir, entry)))) throw new Error(`Skill pack ${pack.id} has no ${entry} in ${pack.sourcePath}`);
 
   const added = [];
   let skipped = 0;
   for (const relative of await listFiles(sourceDir)) {
-    const destination = path.join(target, pack.bootstrapPath, relative);
+    const destination = await assertSafePath(target, `${pack.bootstrapPath}/${relative}`);
     if (await exists(destination)) {
       skipped += 1;
       continue;
     }
     if (!args.dryRun) {
       await mkdir(path.dirname(destination), { recursive: true });
-      await copyFile(path.join(sourceDir, relative), destination);
+      await copyFile(path.join(sourceDir, relative), destination, constants.COPYFILE_EXCL);
     }
     added.push(relative);
   }

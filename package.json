@@ -1,0 +1,16 @@
+{
+  "name": "developer-tool-natakorn",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Portable, evidence-driven AI developer toolkit with safe project lifecycle commands",
+  "engines": { "node": ">=22" },
+  "bin": { "natakorn": "bin/natakorn.mjs" },
+  "scripts": {
+    "check": "node scripts/check-syntax.mjs",
+    "test": "node --test",
+    "verify": "node scripts/verify-kit.mjs",
+    "doctor": "node bin/natakorn.mjs doctor",
+    "sources": "node bin/natakorn.mjs sources"
+  }
+}

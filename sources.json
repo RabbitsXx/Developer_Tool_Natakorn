@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-08",
+  "method": "Primary repository and official documentation review. Patterns are implemented locally; upstream source code is not vendored or automatically executed.",
+  "sources": [
+    {
+      "id": "spec-kit",
+      "repository": "https://github.com/github/spec-kit",
+      "license": "MIT",
+      "evidence": "https://github.github.com/spec-kit/reference/integrations.html",
+      "observedResult": "Documents per-agent installation directories and SHA-256 tracking that preserves modified integration files.",
+      "adoptedPattern": "Track ownership and installed hashes, plan changes first, and block upgrades when managed files have local edits.",
+      "implementation": ["scripts/kit-lifecycle.mjs", "tests/lifecycle.test.mjs"],
+      "limitation": "This is evidence for the installation design, not a measured productivity improvement for this kit."
+    },
+    {
+      "id": "superpowers",
+      "repository": "https://github.com/obra/superpowers",
+      "license": "MIT",
+      "evidence": "https://github.com/obra/superpowers/tree/main/skills/verification-before-completion",
+      "observedResult": "Ships composable workflow skills, debugging procedures, and an explicit verification-before-completion skill.",
+      "adoptedPattern": "Require executed verification evidence and structured acceptance cases instead of generic completion claims.",
+      "implementation": ["scripts/verify-kit.mjs", "docs/OPEN_SOURCE_FOUNDATIONS.md"],
+      "limitation": "No claim that its agent methodology has been independently benchmarked here; no upstream skill text is copied."
+    },
+    {
+      "id": "repomix",
+      "repository": "https://github.com/yamadashy/repomix",
+      "license": "MIT",
+      "evidence": "https://repomix.com/guide/security",
+      "observedResult": "Documents repository packing, ignore rules, and secret detection before context sharing.",
+      "adoptedPattern": "Keep repository context local, exclude sensitive/generated files, and review packed output before sharing.",
+      "implementation": ["repomix.config.json", "templates/repomixignore", "docs/CONTEXT_EFFICIENCY.md"],
+      "limitation": "Scanning and ignore rules cannot guarantee that all sensitive content is excluded. Existing integration is retained."
+    },
+    {
+      "id": "rtk",
+      "repository": "https://github.com/rtk-ai/rtk",
+      "license": "Apache-2.0",
+      "evidence": "https://github.com/rtk-ai/rtk",
+      "observedResult": "Provides command-output filtering and a gain command to inspect token savings.",
+      "adoptedPattern": "Probe the official executable and measure actual local output savings rather than promising a universal percentage.",
+      "implementation": ["scripts/doctor.mjs", "RTK.md", "docs/CONTEXT_EFFICIENCY.md"],
+      "limitation": "Upstream savings claims do not measure this kit's end-to-end model cost, latency, or software quality."
+    }
+  ]
+}

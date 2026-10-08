@@ -1,6 +1,14 @@
 {
   "schemaVersion": 6,
   "name": "Ultimate VibeCoder Ecosystem",
+  "version": "1.1.0",
+  "cli": "bin/natakorn.mjs",
+  "sources": "sources.json",
+  "installation": {
+    "ledger": ".ai-kit/installation.json",
+    "hash": "sha256",
+    "updateRule": "Update tracked files only while their content still matches the installed hash; preserve unowned files and block on local edits."
+  },
   "bootstrap": {
     "startPrompt": "START_PROMPT.md",
     "stateFile": ".ai-kit/project.json",
@@ -26,8 +34,8 @@
   "runtime": {
     "destination": ".ai-kit/bin",
     "syncScript": "scripts/sync-runtime.mjs",
-    "files": ["policy-check.mjs", "run-safe.mjs", "memory.mjs", "metrics.mjs"],
-    "rule": "Install the self-contained safety and session helpers into each target project; preserve existing copies unless --update is explicit."
+    "files": ["policy-check.mjs", "run-safe.mjs", "memory.mjs", "metrics.mjs", "safe-paths.mjs", "cli.mjs", "kit-lifecycle.mjs", "project-state.mjs", "doctor.mjs"],
+    "rule": "Install self-contained project helpers and manifest into each target; use the CLI update command for hash-checked upgrades."
   },
   "profiles": {
     "default": "general",

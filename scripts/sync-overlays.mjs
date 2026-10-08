@@ -2,6 +2,7 @@
 import { lstat, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertSafePath } from './safe-paths.mjs';
 
 const kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAX_FILE_BYTES = 1024 * 1024;
@@ -54,14 +55,18 @@ export async function syncOverlays({ source, target, dryRun = false }) {
   const entries = await readdir(sourceRoot, { withFileTypes: true });
   const overlays = [];
   for (const entry of entries) {
+    if (entry.isSymbolicLink()) throw new Error('Overlay source directories must not be symbolic links');
     if (!entry.isDirectory()) continue;
+    await assertSafePath(sourceRoot, `${entry.name}/OVERLAY.md`);
     const overlay = await inspectOverlay(path.join(sourceRoot, entry.name), entry.name);
     if (overlay) overlays.push(overlay);
   }
 
   const destinationRoot = path.join(targetRoot, '.ai-kit', 'overlays');
+  await assertSafePath(targetRoot, '.ai-kit/overlays/.path-check');
   const result = { ok: true, dryRun, source: sourceRoot, target: targetRoot, added: [], skipped: [] };
   for (const overlay of overlays) {
+    for (const file of overlay.files) await assertSafePath(targetRoot, `.ai-kit/overlays/${overlay.name}/${file.relative.split(path.sep).join('/')}`);
     const destination = path.join(destinationRoot, overlay.name);
     let exists = false;
     try { await lstat(destination); exists = true; } catch {}
@@ -80,7 +85,7 @@ export async function syncOverlays({ source, target, dryRun = false }) {
       for (const file of overlay.files) {
         const targetFile = path.join(destination, file.relative);
         await mkdir(path.dirname(targetFile), { recursive: true });
-        await writeFile(targetFile, await readFile(file.source));
+        await writeFile(targetFile, await readFile(file.source), { flag: 'wx' });
       }
     }
   }

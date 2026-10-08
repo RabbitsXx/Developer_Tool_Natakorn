@@ -4,10 +4,9 @@
  * Prefer a project's native process runner for ordinary commands; use this for mutating operations.
  */
 import { spawnSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { classifyCommand, redact, record } from './policy-check.mjs';
+import { classifyCommand, loadPolicy, redact, record } from './policy-check.mjs';
 
 function parseArgs(argv) {
   const args = { target: '.', command: null, approved: false, actor: 'agent', reason: '' };
@@ -26,17 +25,11 @@ function parseArgs(argv) {
   return args;
 }
 
-async function loadPolicy(target) {
-  try {
-    return JSON.parse(await readFile(path.join(path.resolve(target), '.ai-kit', 'policy.json'), 'utf8'));
-  } catch {
-    return { mode: 'deny-first', auditLog: '.ai-kit/audit/events.jsonl' };
-  }
-}
-
+async function main() {
 const args = parseArgs(process.argv.slice(2));
 const policy = await loadPolicy(args.target);
 const classification = classifyCommand(args.command, policy);
+if (classification.decision === 'approval_required' && args.approved && !args.reason.trim()) throw new Error('An approved command requires --reason describing the existing authorization');
 const effective = classification.decision === 'approval_required' && args.approved ? 'allow' : classification.decision;
 const event = {
   timestamp: new Date().toISOString(),
@@ -57,4 +50,9 @@ if (effective !== 'allow') {
   const result = spawnSync(args.command, { cwd: path.resolve(args.target), shell: true, stdio: 'inherit', windowsHide: true });
   console.log(JSON.stringify({ ok: result.status === 0, ...event, exitCode: result.status }, null, 2));
   process.exitCode = result.status ?? 1;
+}
+}
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try { await main(); }
+  catch (error) { console.error(JSON.stringify({ ok: false, error: redact(error.message) })); process.exitCode = 1; }
 }

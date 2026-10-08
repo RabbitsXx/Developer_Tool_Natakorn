@@ -31,7 +31,7 @@ const shouldWrite = !args.dryRun && !writeBlockedByDrift;
 if (shouldWrite) stateFile = await writeProjectState(target, state);
 
 console.log(JSON.stringify({
-  ok: true,
+  ok: !writeBlockedByDrift,
   dryRun: args.dryRun,
   stateWritten: shouldWrite,
   writeBlockedByDrift,
@@ -52,7 +52,9 @@ console.log(JSON.stringify({
   potentiallyUsefulCapabilities: state.capabilities.potentiallyUseful,
   architectureFingerprint: state.architectureFingerprint,
   driftDetected: state.drift.detected,
+  driftChanges: inspection.driftChanges,
   pendingDecisions: state.pendingDecisions,
   stateFile: args.dryRun ? null : stateFile,
   safety: state.safety,
 }, null, 2));
+if (writeBlockedByDrift) process.exitCode = 1;

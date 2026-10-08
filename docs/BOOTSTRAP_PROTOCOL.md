@@ -85,9 +85,17 @@ Never use `--accept-drift` simply to silence a warning.
 
 ## Bootstrap behavior
 
+The canonical entrypoint is `node bin/natakorn.mjs init --target <project>`. Both OS wrappers delegate to it. `--dry-run` checks a complete plan without creating files. Agent-specific skills directories are optional through `--agent`; the canonical pack copies remain in `.ai-kit/skills/`.
+
+The installer records file ownership and SHA-256 hashes in `.ai-kit/installation.json`. `update` replaces only unchanged tracked files. Any local modification of a tracked file blocks the complete update before writes. Existing untracked files are preserved, even if identical to a template. It never infers ownership when migrating a legacy bootstrap.
+
+`inspect` is read-only and reports architecture field changes. Drift blocks state replacement until an intentional `--accept-drift`. Invalid state or installation JSON is an error and is never silently reset. Metadata uses atomic sibling-file replacement, and installation uses an exclusive lock with rollback of files written during a failed run; empty directories may remain.
+
+Runtime helpers, `toolchain.json`, and `sources.json` are copied into `.ai-kit/`, so `node .ai-kit/bin/cli.mjs inspect|status|doctor|sources` works inside the installed project. Full checkout commands such as init/update/verify continue to require the kit repository.
+
 1. Add missing AI-project instruction, policy, memory, and agent-neutral pointer files without overwriting existing project files.
 2. Synchronize every Agent Skills pack registered in `toolchain.json` into `.ai-kit/skills/<pack>` without overwriting project-local edits, using the manifest-driven sync script.
-3. Copy the four runtime helpers into `.ai-kit/bin/`; existing copies are preserved and differences are reported unless `--update` is requested.
+3. Copy the registered runtime helpers into `.ai-kit/bin/` together with `.ai-kit/toolchain.json` and `.ai-kit/sources.json`. Use the lifecycle CLI's `update` command for upgrades; it checks the ownership ledger and installed hashes. The legacy `sync-runtime.mjs` helper supports read-only planning and filling missing files; mutating `--update` delegates the user to the CLI.
 4. Optionally copy project-owned overlays from `--overlay <dir>` or `AI_KIT_OVERLAY_DIR`. Existing overlays are preserved; secret-like files and oversized files are refused.
 5. Run the safe project detector to establish `.ai-kit/project.json`.
 

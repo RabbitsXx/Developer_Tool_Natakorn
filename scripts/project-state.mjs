@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto';
-import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { access, lstat, readFile, readdir } from 'node:fs/promises';
+import { assertSafePath, atomicWrite } from './safe-paths.mjs';
+import { redact } from './policy-check.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const STATE_SCHEMA_VERSION = 1;
-const KIT_VERSION = 5;
+const KIT_VERSION = 6;
 const KIT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SKILL_ENTRY = 'SKILL.md';
 const MANIFEST = await readJson(path.join(KIT_ROOT, 'toolchain.json')) ?? {};
@@ -23,7 +25,7 @@ const HTTP_SERVER_DEPS = [
 const MOBILE_DEPS = ['expo', 'react-native', '@react-navigation/native', '@react-navigation/native-stack', 'flutter'];
 const INFRA_MARKERS = ['Dockerfile', 'docker-compose.yml', 'docker-compose.yaml', 'terraform', 'pulumi', 'ansible', '.github/workflows'];
 const PYTHON_API_RE = /(fastapi|flask|django|starlette|litestar|falcon|sanic|tornado|bottle|aiohttp)/i;
-const IGNORED_SCAN_DIRS = new Set(['.ai-kit', '.git', '.hg', '.svn', 'node_modules', 'vendor', 'dist', 'build', 'target', '.next', '.venv', 'venv', '__pycache__', '.cache']);
+const IGNORED_SCAN_DIRS = new Set(['.ai-kit', '.agents', '.claude', '.gemini', '.git', '.hg', '.svn', 'node_modules', 'vendor', 'dist', 'build', 'target', '.next', '.venv', 'venv', '__pycache__', '.cache']);
 const DOCUMENT_EXTENSIONS = new Set(['.md', '.mdx', '.txt', '.rst', '.adoc', '.doc', '.docx', '.odt', '.pdf', '.rtf']);
 const DATA_EXTENSIONS = new Set(['.csv', '.tsv', '.xlsx', '.xls', '.parquet', '.jsonl', '.ndjson', '.feather', '.arrow', '.sav', '.dta']);
 const SOURCE_EXTENSIONS = new Set(['.py', '.pyw', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.sh', '.ps1', '.rb', '.go', '.rs', '.php', '.java', '.cs']);
@@ -69,8 +71,9 @@ async function readJson(file) {
   try {
     const text = (await readFile(file, 'utf8')).replace(/^\uFEFF/, '');
     return JSON.parse(text);
-  } catch {
-    return null;
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw new Error(`Cannot read valid JSON from ${path.basename(file)}`);
   }
 }
 
@@ -170,7 +173,7 @@ function detectCapabilities(deps, markers, pkg) {
   const remoteCi = markers.has('.github/workflows') ? 'github-actions-or-other-workflow' : null;
   const qualityScripts = {};
   for (const name of ['lint', 'typecheck', 'test', 'test:e2e', 'build', 'format', 'knip']) {
-    if (pkg?.scripts?.[name]) qualityScripts[name] = pkg.scripts[name];
+    if (pkg?.scripts?.[name]) qualityScripts[name] = redact(pkg.scripts[name]);
   }
   return { skillPacks, browserE2E, accessibility, codeHealth, gitHooks, backgroundJobs, observability, deployment, remoteCi, mobile, infrastructure, qualityScripts };
 }
@@ -200,7 +203,7 @@ async function scanFileExtensions(target) {
       } else if (entry.isFile()) {
         const normalized = relative.split(path.sep).join('/');
         const bootstrapOwned = new Set(['START_PROMPT.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'PROJECT_CONTEXT.md', 'docs/run.md', '.github/copilot-instructions.md']);
-        if (bootstrapOwned.has(normalized)) continue;
+        if (bootstrapOwned.has(normalized) || normalized.startsWith('.github/skills/')) continue;
         files.push({ name: entry.name, path: normalized, extension: path.extname(entry.name).toLowerCase() });
       }
       if (entriesSeen >= maxEntries) {
@@ -263,11 +266,13 @@ function architectureFingerprint(detected) {
 
 export async function inspectProject(targetPath) {
   const target = path.resolve(targetPath);
+  const targetStat = await lstat(target);
+  if (!targetStat.isDirectory() || targetStat.isSymbolicLink()) throw new Error('Project target must be an existing real directory');
   const markerNames = [
     'package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lock', 'bun.lockb',
     'pyproject.toml', 'requirements.txt', 'Pipfile', 'poetry.lock', 'Cargo.toml', 'go.mod',
     'composer.json', 'Gemfile', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'deno.json', 'Dockerfile',
-    'docker-compose.yml', 'docker-compose.yaml', 'terraform', 'pulumi', 'ansible', 'android', 'ios', 'app.json', 'app.config.js', 'app.config.ts',
+    'docker-compose.yml', 'docker-compose.yaml', 'terraform', 'pulumi', 'ansible', 'android', 'ios', 'app.json', 'app.config.js', 'app.config.ts', '.git',
     '.github/workflows',
     'next.config.js', 'next.config.mjs', 'next.config.ts', 'vite.config.js', 'vite.config.ts',
     ...SKILL_PACKS.map(skillEntryMarker), 'knip.json', 'knip.jsonc', 'knip.ts', 'lefthook.yml', 'lefthook.yaml',
@@ -276,16 +281,17 @@ export async function inspectProject(targetPath) {
   const markers = new Set();
   for (const name of markerNames) if (await exists(path.join(target, name))) markers.add(name);
 
-  const pkg = markers.has('package.json') ? await readJson(path.join(target, 'package.json')) : null;
+  const pkg = markers.has('package.json') ? await readJson(await assertSafePath(target, 'package.json')) : null;
   const deps = dependencyMap(pkg);
   const fileScan = await scanFileExtensions(target);
   const overlays = await detectOverlays(target);
   const envExample = await readText(path.join(target, '.env.example'));
-  const previousState = await readJson(path.join(target, '.ai-kit', 'project.json'));
+  const previousState = await readJson(await assertSafePath(target, '.ai-kit/project.json'));
+  if (previousState && (previousState.schemaVersion !== STATE_SCHEMA_VERSION || !previousState.kit?.configured || !/^[a-f0-9]{64}$/.test(previousState.architectureFingerprint ?? ''))) throw new Error('Invalid project state; restore .ai-kit/project.json or review it before reconfiguring');
   const topLevelNames = new Set(await readdir(target).catch(() => []));
   const kitOnlyNames = new Set([
     'START_PROMPT.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'PROJECT_CONTEXT.md', '.env.example', '.gitignore', '.editorconfig',
-    'repomix.config.json', '.repomixignore', '.ai-kit', '.github',
+    'repomix.config.json', '.repomixignore', '.ai-kit', '.agents', '.claude', '.gemini', '.github',
   ]);
   const hasUserDocs = fileScan.files.some((file) => file.path.startsWith(`docs${path.sep}`) || file.path.startsWith('docs/'));
   const hasNonPointerGithubFiles = fileScan.files.some((file) => file.path.startsWith(`.github${path.sep}`) || file.path.startsWith('.github/'));
@@ -311,6 +317,7 @@ export async function inspectProject(targetPath) {
   };
   const fingerprint = architectureFingerprint(detected);
   const driftDetected = Boolean(previousState?.architectureFingerprint && previousState.architectureFingerprint !== fingerprint);
+  const driftChanges = previousState?.detected ? Object.entries(stableArchitecture(detected)).filter(([key, value]) => JSON.stringify(stableArchitecture(previousState.detected)[key]) !== JSON.stringify(value)).map(([key, value]) => ({ field: key, previous: stableArchitecture(previousState.detected)[key], current: value })) : [];
 
   const availableCapabilities = [
     detected.framework,
@@ -375,6 +382,7 @@ export async function inspectProject(targetPath) {
     detected,
     architectureFingerprint: fingerprint,
     driftDetected,
+    driftChanges,
     availableCapabilities: [...new Set(availableCapabilities)],
     potentiallyUsefulCapabilities: [...new Set(potentiallyUseful)],
     profile,
@@ -422,9 +430,7 @@ export function buildProjectState(inspection, now = new Date()) {
 }
 
 export async function writeProjectState(targetPath, state) {
-  const dir = path.join(path.resolve(targetPath), '.ai-kit');
-  await mkdir(dir, { recursive: true });
-  const file = path.join(dir, 'project.json');
-  await writeFile(file, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+  const file = await assertSafePath(targetPath, '.ai-kit/project.json');
+  await atomicWrite(targetPath, '.ai-kit/project.json', `${JSON.stringify(state, null, 2)}\n`);
   return file;
 }

@@ -1,5 +1,9 @@
 # Architecture and decision rules
 
+## Toolkit runtime (v1.1)
+
+`bin/natakorn.mjs` delegates to `scripts/cli.mjs`. The shared lifecycle module validates and plans all file changes before execution, records ownership in `.ai-kit/installation.json`, and installs self-contained helpers into `.ai-kit/bin/`. The package has no third-party runtime dependencies. OS bootstrap wrappers invoke the shared CLI; metadata and project code remain separate. `sources.json` records reviewed design references without enabling network access or remote code execution.
+
 ## Reference flow
 
 ```text

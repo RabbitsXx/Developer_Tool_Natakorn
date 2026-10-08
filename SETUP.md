@@ -1,5 +1,7 @@
 # Standard Project Workflow for AI Agents
 
+Use `node bin/natakorn.mjs init --target <project> --dry-run` for a complete installation plan, then run without `--dry-run`. Use `inspect` for read-only state discovery and `update` for upgrades of unchanged kit-owned files. Repository verification is `node bin/natakorn.mjs verify` or `npm run verify`; no dependency installation is necessary.
+
 ## 0. Bootstrap / Resume
 
 - Read `.ai-kit/project.json` first when it exists, then `START_PROMPT.md` and project instructions.

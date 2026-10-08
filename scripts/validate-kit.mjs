@@ -6,6 +6,16 @@ import { findSkillDocDrift } from './sync-skill-docs.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const required = [
+  'package.json',
+  'bin/natakorn.mjs',
+  'sources.json',
+  'scripts/cli.mjs',
+  'scripts/kit-lifecycle.mjs',
+  'scripts/safe-paths.mjs',
+  'scripts/doctor.mjs',
+  'scripts/check-syntax.mjs',
+  'scripts/verify-kit.mjs',
+  'docs/OPEN_SOURCE_FOUNDATIONS.md',
   'START_PROMPT.md',
   'AGENTS.md',
   'SETUP.md',
@@ -54,6 +64,15 @@ const required = [
 
 for (const file of required) await access(path.join(root, file));
 const toolchain = JSON.parse(await readFile(path.join(root, 'toolchain.json'), 'utf8'));
+const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
+if (pkg.version !== toolchain.version || toolchain.cli !== 'bin/natakorn.mjs') throw new Error('Package and CLI versions must match the manifest');
+const sources = JSON.parse(await readFile(path.join(root, 'sources.json'), 'utf8'));
+if (sources.schemaVersion !== 1 || !Array.isArray(sources.sources) || sources.sources.length < 4) throw new Error('Open-source evidence registry is missing');
+for (const source of sources.sources) {
+  if (!source.id || !source.license || !source.adoptedPattern || !source.limitation || !source.repository.startsWith('https://github.com/') || !source.evidence.startsWith('https://')) throw new Error('Source evidence contract is incomplete');
+  for (const file of source.implementation) await access(path.join(root, file));
+}
+for (const helper of toolchain.runtime.files) await access(path.join(root, 'scripts', helper));
 if (toolchain.schemaVersion < 6) throw new Error('toolchain schemaVersion must be >= 6');
 if (toolchain.bootstrap?.startPrompt !== 'START_PROMPT.md') throw new Error('bootstrap start prompt contract is missing');
 if (toolchain.bootstrap?.stateFile !== '.ai-kit/project.json') throw new Error('bootstrap state-file contract is missing');
@@ -118,13 +137,11 @@ if (!(await readFile(path.join(root, 'templates/memory/README.md'), 'utf8')).inc
 const bootstrapPs1 = await readFile(path.join(root, 'scripts/bootstrap-project.ps1'), 'utf8');
 const bootstrapSh = await readFile(path.join(root, 'scripts/bootstrap-project.sh'), 'utf8');
 for (const [name, text] of [['PowerShell bootstrap', bootstrapPs1], ['shell bootstrap', bootstrapSh]]) {
-  if (!text.includes('START_PROMPT.md') || !text.includes('setup-project.mjs')) throw new Error(`${name} does not establish AI bootstrap state`);
-  if (!text.includes('.ai-kit') || !text.includes('sync-skills.mjs')) throw new Error(`${name} does not synchronize Agent Skills packs`);
-  if (!text.includes('sync-runtime.mjs')) throw new Error(`${name} does not synchronize runtime helpers`);
-  for (const pointer of ['CLAUDE.md', 'GEMINI.md', 'copilot-instructions.md']) {
-    if (!text.includes(pointer)) throw new Error(`${name} does not copy ${pointer}`);
-  }
+  if (!text.includes('natakorn.mjs') || !text.includes('init') || !text.includes('all')) throw new Error(`${name} must delegate to the shared installer with agent integration`);
+  if (!text.includes('dry-run')) throw new Error(`${name} must support read-only planning`);
 }
+const installer = await readFile(path.join(root, 'scripts/kit-lifecycle.mjs'), 'utf8');
+for (const contract of ['START_PROMPT.md', 'PROJECT_CONTEXT.md', '.ai-kit/policy.json', 'CLAUDE.md', 'GEMINI.md', 'copilot-instructions.md', 'manifest.runtime.files', 'manifest.skills.packs', 'installation.json']) if (!installer.includes(contract)) throw new Error(`Shared installer contract missing: ${contract}`);
 // PowerShell 5.1 reads BOM-less UTF-8 scripts as ANSI, so one non-ASCII character in a .ps1 file
 // becomes invalid UTF-8 in captured output that log tools and gates then cannot read. Node and
 // shell scripts are UTF-8 by contract, so only .ps1 files carry this risk.

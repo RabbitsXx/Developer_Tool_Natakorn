@@ -1,5 +1,7 @@
 # Installation guide
 
+For toolkit v1.1+, start with the shared Node CLI documented in [README](../README.md): `node bin/natakorn.mjs init --target <project> --agent all --dry-run`. Remove `--dry-run` after reviewing the plan. This installs instructions and local helpers without downloading optional tools. Use the following platform-specific instructions only for tools the project actually selects.
+
 Install workstation tools globally only when they are shared across projects. Keep application dependencies project-local and committed through a lockfile.
 
 ## Project bootstrap and first AI session
