@@ -13,7 +13,6 @@
 - [Agent integrations และ skills](#agent-integrations-และ-skills)
 - [Profiles, overlays และ optional starters](#profiles-overlays-และ-optional-starters)
 - [ความปลอดภัยและข้อมูล](#ความปลอดภัยและข้อมูล)
-- [ผลทดลอง A/B](#ผลทดลอง-ab)
 - [ตรวจ toolkit และพัฒนาต่อ](#ตรวจ-toolkit-และพัฒนาต่อ)
 - [เอกสารเพิ่มเติม](#เอกสารเพิ่มเติม)
 
@@ -180,18 +179,6 @@ node bin/natakorn.mjs init --target /path/to/project --with playwright,accessibi
 - Policy เป็น regex gate; host ยังต้องควบคุม process permissions เพราะการวิเคราะห์นี้ไม่ครอบคลุม shell syntax, aliases หรือสคริปต์ที่ซ่อนการทำงานทุกแบบ
 
 อ่าน [Bootstrap protocol](docs/BOOTSTRAP_PROTOCOL.md) และ [Open-source foundations](docs/OPEN_SOURCE_FOUNDATIONS.md) สำหรับรายละเอียดขอบเขต
-
-## ผลทดลอง A/B
-
-โฟลเดอร์ [`experiments/`](experiments/) เก็บ prompt, output และข้อสังเกตจากการเปรียบเทียบที่เกิดขึ้นในโปรเจกต์:
-
-| การทดลอง | ผลที่สังเกตในรอบนี้ | ขอบเขต |
-|---|---|---|
-| [One-shot prompt A/B](experiments/one-shot-ab/README.md) | ผู้ใช้เลือก A ที่สั้นกว่าโดยรวม แม้ B ระบุบริบท repo และ acceptance มากกว่า | หนึ่งคู่; ไม่ได้ระบุมิติที่ทำให้เลือก A และไม่ได้ทดสอบผลของ repo instructions แยกต่างหาก |
-| [Tool usefulness A/B](experiments/tool-utility-ab/README.md) | B ใช้ repo tools แล้วให้รายละเอียดผลิตภัณฑ์และขั้นเริ่มต้นที่ตรวจสอบได้มากกว่า A | หนึ่งคู่; ไม่วัดเวลา ค่าใช้จ่าย ความแปรปรวน หรือความพึงพอใจของผู้ชม |
-| [AI landing page design race](experiments/ai-agent-landing-ab/README.md) | B มีความเฉพาะกับผลิตภัณฑ์และ CTA ถูกต้องกว่า A ในเกณฑ์ที่ตรวจ | หนึ่งคู่; ไม่ใช่ blind visual rating หรือผลจากผู้เข้าชมจริง |
-
-อ่านผลเป็นหลักฐานเฉพาะงาน ไม่ใช่ข้อสรุปว่า tools, skills หรือ prompt ที่ยาวกว่าจะดีกว่าเสมอ การทดลองชุดนี้ยังไม่มีจำนวนรอบมากพอสำหรับข้อสรุปเชิงสถิติ และไม่ได้วัด conversion จริง
 
 ## แนวทางจากโอเพนซอร์ส
 
